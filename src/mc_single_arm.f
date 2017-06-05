@@ -13,35 +13,11 @@ C-______________________________________________________________________________
 	include 'spectrometers.inc'
 	include 'constants.inc'
 
-C HBOOK/NTUPLE common block and parameters.
-	integer*4	pawc_size
-	parameter	(pawc_size = 1000000)
-	common		/pawc/ hbdata(pawc_size)
-	integer*4	hbdata
-	character*8	hut_nt_names(20)/
-     >			'hsxfp', 'hsyfp', 'hsxpfp', 'hsypfp',
-     >			'hsztari','hsytari', 'hsdeltai', 'hsyptari', 'hsxptari',
-     >			'hsztar','hsytar', 'hsdelta', 'hsyptar', 'hsxptar', 
-     >                  'hsxtari','yrast','xsnum','ysnum','xsieve'
-     >                  ,'ysieve'/
-	real*4		hut(20)
+c Vector (real*4) for hut ntuples - needs to match dimension of variables
+	real*4		shms_hut(20)
+	real*4          shms_spec(58)
 
-	character*8	spec_nt_names(58)/
-     >			's_hb1_x', 's_hb1_y','s_hb2_x', 's_hb2_y','s_hb3_x', 's_hb3_y','s_hb4_x', 's_hb4_y', 's_q1_x', 's_q1_y', ! 10
-     >                  's_q2_x', 's_q2_y', 's_q3_x', 's_q3_y', !14
-     >                  's_d1_x', 's_d1_y', 's_d1f_x', 's_d1f_y', !18
-     >                  's_dme_x', 's_dme_y', 's_dm1_x', 's_dm1_y', !22
-     >                  'S_dm2_x', 's_dm2_y', 'S_dm3_x','s_dm3_y', !26
-     >                  'S_dm4_x', 's_dm4_y', 'S_dm5_x','s_dm5_y', !30
-     >                  'S_dm6_x', 's_dm6_y', 'S_dm7_x','s_dm7_y', !34
-     >                  'S_dmex_x', 's_dmex_y', 's_dex_x', 's_dex_y', !38
-     >                  's_dc1_x', 's_dc1_y', 's_dc2_x', 's_dc2_y', !42
-     >                  's_s1_x', 's_s1_y', 's_s2_x', 's_s2_y', !46
-     >                  's_cal_x', 's_cal_y', 's_fcal_x', 's_fcal_y',
-     >                  'sxfp', 'syfp', 
-     >                  'sdelta', 'sxptar', 'syptar', 'sxcoll', 
-     >                  'sycoll', 'sflag'/
-	real*4          spec(58)
+	real*4          hms_hut(14)
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
@@ -124,7 +100,7 @@ C Function definitions.
         integer      itime,ij
         character	timestring*30
 
-        character*80 rawname, filename
+        character*80 rawname, filename, hbook_filename
 	real*4  secnds,zero
 
 	parameter(zero=0.0)
@@ -204,32 +180,10 @@ C Open setup file.
 	print *,filename,'opened'
 	open(unit=chanin,status='old',file=filename)
 
-C Initialize HBOOK/NTUPLE if used.
+C Define HBOOK/NTUPLE filename if used.
 	if (hut_ntuple) then
-	  call hlimit(pawc_size)
-	  filename = '../worksim/'//rawname(1:last_char(rawname))//'.rzdat'
-
-cmkj          iquest(10) = 256000
-cmkj	  iquest(10) = 510000
-! see for example
-!   http://wwwasd.web.cern.ch/wwwasd/cgi-bin/listpawfaqs.pl/7
-! the file size is limited to ~260M no matter how I change iquest !
-cmkj	  call hropen(30,'HUT',filename,'NQ',4096,i) !CERNLIB
-	  call hropen(30,'HUT',filename,'N',1024,i) !CERNLIB
- 
-	  if (i.ne.0) then
-! TH - use "write" instead of "type" for gfortran. Change this everywhere below
-!	    type *,'HROPEN error: istat = ',i
-	    write(*,*),'HROPEN error: istat = ',i
-	    stop
-	  endif
-
-	  call hbookn(1411,'HUT NTUPLE',20,'HUT',10000,hut_nt_names)
-          if (spec_ntuple) then
-           call hbookn(1412,'SPEC NTU',58,'HUT',10000,spec_nt_names)
-          endif
-	endif	   
-
+	  hbook_filename = '../worksim/'//rawname(1:last_char(rawname))//'.rzdat'
+	endif
 C Open Output file.
 	filename = '../outfiles/'//rawname(1:last_char(rawname))//'.out'
 	open (unit=chanout,status='unknown',file=filename)
@@ -253,7 +207,13 @@ C Strip off header
 ! Spectrometer flag:
 	read (chanin,1001) str_line
 	iss = rd_real(str_line,ispec)
-	if (.not.iss) stop 'ERROR (Spectrometer selectrion) in setup!'
+	if (.not.iss) stop 'ERROR (Spectrometer selection) in setup!'
+! Open HBOOK/NTUPLE file here
+	if(hut_ntuple) then
+	   if(ispec.eq.2) then
+	      call shms_hbook_init(hbook_filename,spec_ntuple)
+	   endif
+	endif
 
 ! Spectrometer momentum:
 	read (chanin,1001) str_line
@@ -454,17 +414,22 @@ C dxdz and dydz in HMS TRANSPORT coordinates.
      &          /1000.   + gen_lim_down(3)/1000.
 
 
+	  if(ispec.eq.2) then ! SHMS
 C Transform from target to SHMS (TRANSPORT) coordinates.
 C Version for a spectrometer on the left-hand side: (i.e. SHMS)
-	  x_s    = -y
-	  y_s    = x * cos_ts - z * sin_ts
-	  z_s    = z * cos_ts + x * sin_ts
-
+	     x_s    = -y
+	     y_s    = x * cos_ts - z * sin_ts
+	     z_s    = z * cos_ts + x * sin_ts
+	  elseif(ispec.eq.1) then ! HMS
 C Below assumes that HMS is on the right-hand side of the beam
 C line (looking downstream).
-!	  xs    = -y
-!	  ys    = x * cos_ts + z * sin_ts
-!	  zs    = z * cos_ts - x * sin_ts
+	     xs    = -y
+	     ys    = x * cos_ts + z * sin_ts
+	     zs    = z * cos_ts - x * sin_ts
+	  else
+	     write(6,*) 'unknown spectrometer: stopping'
+	     stop
+	  endif
 
 C DJG Apply spectrometer offsets
 C DJG If the spectrometer if too low (positive x offset) a particle
@@ -569,17 +534,27 @@ c
 	  dif_a = (th_spec*1000+dth_init-dydz_aa*1000)  ! mrad
 
 ! ----------------------------------------------------------------------------
-	  call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z, 
+	  if(ispec.eq.2) then
+	     call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z, 
      >          dxdz_s, dydz_s,
-     >		x_fp, dx_fp, y_fp, dy_fp, m2, spec,
-     >		ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
+     >		x_fp, dx_fp, y_fp, dy_fp, m2, shms_spec,
+     >		ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
      >          pathlen, 5,
      >          .false.)
-          if (spec_ntuple) then
-	     spec(58) = stop_id
+	     if (spec_ntuple) then
+		shms_spec(58) = stop_id
 c            if (ok_spec) spec(58) =1.
-            call hfn(1412,spec)
-          endif
+		call hfn(1412,shms_spec)
+	     endif
+	  elseif(ispec.eq.1) then
+	     call mc_hms(p_spec, th_spec, dpps, xs, ys, zs, dxdzs, dydzs,
+     >          x_fp, dx_fp, y_fp, dy_fp, m2,
+     >          ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
+     >          pathlen)
+	  else
+	     write(6,*) 'Unknown spectrometer! Stopping..'
+	     stop
+	  endif
 
 	  if (ok_spec) then !Success, increment arrays
 	    dpp_recon = dpp_s
@@ -590,37 +565,59 @@ c            if (ok_spec) spec(58) =1.
 
 
 C Output NTUPLE entry.
-
-	    if (hut_ntuple) then
-	      hut(1) = x_fp
-	      hut(2) = y_fp
-	      hut(3) = dx_fp
-	      hut(4) = dy_fp
-	      hut(5) = ztar_init
-	      hut(6) = ytar_init
-	      hut(7) = dpp_init
-	      hut(8) = dth_init/1000.
-	      hut(9) = dph_init/1000.
-	      hut(10) = ztar_recon
-	      hut(11) = ytar_recon
-	      hut(12)= dpp_recon
-	      hut(13)= dth_recon/1000.
-	      hut(14)= dph_recon/1000.
-	      hut(15)= xtar_init
-	      hut(16)= y
-	      hut(17)= xs_num
-	      hut(18)= ys_num
-	      hut(19)= xc_sieve
-	      hut(20)= yc_sieve
-              if (use_front_sieve) then
-	      hut(17)= xsfr_num
-	      hut(18)= ysfr_num
-	      hut(19)= xc_frsieve
-	      hut(20)= yc_frsieve
-              endif
-	      call hfn(1411,hut)
+C This is ugly, but want the option to have different outputs
+C for spectrometer ntuples
+	    if(ispec.eq.2) then
+	       if (hut_ntuple) then
+		  shms_hut(1) = x_fp
+		  shms_hut(2) = y_fp
+		  shms_hut(3) = dx_fp
+		  shms_hut(4) = dy_fp
+		  shms_hut(5) = ztar_init
+		  shms_hut(6) = ytar_init
+		  shms_hut(7) = dpp_init
+		  shms_hut(8) = dth_init/1000.
+		  shms_hut(9) = dph_init/1000.
+		  shms_hut(10) = ztar_recon
+		  shms_hut(11) = ytar_recon
+		  shms_hut(12)= dpp_recon
+		  shms_hut(13)= dth_recon/1000.
+		  shms_hut(14)= dph_recon/1000.
+		  shms_hut(15)= xtar_init
+		  shms_hut(16)= fry
+		  shms_hut(17)= xs_num
+		  shms_hut(18)= ys_num
+		  shms_hut(19)= xc_sieve
+		  shms_hut(20)= yc_sieve
+		  if (use_front_sieve) then
+		     shms_hut(17)= xsfr_num
+		     shms_hut(18)= ysfr_num
+		     shms_hut(19)= xc_frsieve
+		     shms_hut(20)= yc_frsieve
+		  endif
+		  call hfn(1411,shms_hut)
+	       endif
 	    endif
 
+	    if(ispec.eq.1) then
+	       if (hut_ntuple) then
+		  hms_hut(1) = x_fp
+		  hms_hut(2) = y_fp
+		  hms_hut(3) = dx_fp
+		  hms_hut(4) = dy_fp
+		  hms_hut(5) = ytar_init
+		  hms_hut(6) = dpp_init
+		  hms_hut(7) = dth_init/1000.
+		  hms_hut(8) = dph_init/1000.
+		  hms_hut(9) = ytar_recon
+		  hms_hut(10)= dpp_recon
+		  hms_hut(11)= dth_recon/1000.
+		  hms_hut(12)= dph_recon/1000.
+		  hms_hut(13) = fry
+		  hms_hut(14)= ztar_init 
+		  call hfn(1,hms_hut)
+	       endif
+	    endif
 
 C Compute sums for calculating reconstruction variances.
 	    dpp_var(1) = dpp_var(1) + (dpp_recon - dpp_init)
@@ -647,9 +644,11 @@ C------------------------------------------------------------------------------C
 
 C Close NTUPLE file.
 
-	call hrout(1411,i,' ')
-        if (spec_ntuple) call hrout(1412,i,' ')
-	call hrend('HUT')
+	if(ispec.eq.2) then
+	   call hrout(1411,i,' ')
+	   if (spec_ntuple) call hrout(1412,i,' ')
+	   call hrend('HUT')
+	endif
 
 	write (chanout,1002)
 	write (chanout,1003) p_spec,th_spec*degrad
