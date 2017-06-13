@@ -61,6 +61,7 @@ C Event limits, topdrawer limits, physics quantities
 	real*8 pathlen				!path length through spectrometer.
 	logical*4 ok_spec			!indicates whether event makes it in MC
 	integer*4 hit_calo                      !flag for hitting the calorimeter
+	integer*4 armSTOP_successes,armSTOP_trials
 
 C Initial and reconstructed track quantities.
 	real*8 dpp_init,dth_init,dph_init,xtar_init,ytar_init,ztar_init
@@ -115,6 +116,7 @@ C ================================ Executable Code =============================
 C Initialize
 C using SIMC unstructured version
 C
+C SHMS
 	shmsSTOP_trials	= 0
 	shmsSTOP_HB_in	= 0
         shmsSTOP_HB_men = 0
@@ -170,6 +172,28 @@ c	shmsSTOP_Q3_out6	= 0
 	shmsSTOP_cal	= 0
 	shmsSTOP_successes	= 0
 	stop_id = 0
+C HMS
+	hSTOP_trials	= 0
+	hSTOP_slit_hor	= 0
+	hSTOP_slit_vert	= 0
+	hSTOP_slit_oct	= 0
+	hSTOP_Q1_in	= 0
+	hSTOP_Q1_mid	= 0
+	hSTOP_Q1_out	= 0
+	hSTOP_Q2_in	= 0
+	hSTOP_Q2_mid	= 0
+	hSTOP_Q2_out	= 0
+	hSTOP_Q3_in	= 0
+	hSTOP_Q3_mid	= 0
+	hSTOP_Q3_out	= 0
+	hSTOP_D1_in	= 0
+	hSTOP_D1_out	= 0
+	hSTOP_hut	= 0
+	hSTOP_dc1	= 0
+	hSTOP_dc2	= 0
+	hSTOP_scin	= 0
+	hSTOP_cal	= 0
+	hSTOP_successes	= 0
 
 C Open setup file.
 
@@ -206,22 +230,30 @@ C Strip off header
 
 ! Spectrometer flag:
 	read (chanin,1001) str_line
-	iss = rd_real(str_line,ispec)
+	write(*,*),str_line(1:last_char(str_line))
+	iss = rd_int(str_line,ispec)
 	if (.not.iss) stop 'ERROR (Spectrometer selection) in setup!'
 ! Open HBOOK/NTUPLE file here
 	if(hut_ntuple) then
 	   if(ispec.eq.2) then
 	      call shms_hbook_init(hbook_filename,spec_ntuple)
+	   elseif(ispec.eq.1) then
+	      call hms_hbook_init(hbook_filename,spec_ntuple)
+	   else
+	      write(6,*) 'Uknown spectrometer, stopping.'
+	      stop
 	   endif
 	endif
 
 ! Spectrometer momentum:
 	read (chanin,1001) str_line
+	write(*,*),str_line(1:last_char(str_line))
 	iss = rd_real(str_line,p_spec)
 	if (.not.iss) stop 'ERROR (Spec momentum) in setup!'
 
 ! Spectrometer angle:
 	read (chanin,1001) str_line
+	write(*,*),str_line(1:last_char(str_line))
 	iss = rd_real(str_line,th_spec)
 	if (.not.iss) stop 'ERROR (Spec theta) in setup!'
 	th_spec = abs(th_spec) / degrad
@@ -375,8 +407,13 @@ C------------------------------------------------------------------------------C
 c	  call srand(itime)
 
 	do Itrial = 1,n_trials
+	   if(ispec.eq.1) then
+	      armSTOP_successes=hSTOP_successes
+	   elseif(ispec.eq.2) then
+	      armSTOP_successes=shmsSTOP_successes
+	   endif
 	  if(mod(Itrial,5000).eq.0) write(*,*)'event #: ',
-     >Itrial,'       successes: ',shmsSTOP_successes
+     >Itrial,'       successes: ',armSTOP_successes
 
 
 	  irnd=Itrial
@@ -501,13 +538,27 @@ C Solid target
 	  endif
 
 C Scattering before magnets:  Approximate all scattering as occuring AT TARGET.
-C  16 mil Al scattering chamber window (X0=8.89cm)
-C  15 cm air (X0=30420cm)
+C SHMS
+C  20 mil Al scattering chamber window (X0=8.89cm)
+C  57.27 cm air (X0=30420cm)
 C spectrometer entrance window
-C  20 mil Al s (X0=8.89cm)
+C  10 mil Al s (X0=8.89cm)
 
-	  musc_targ_len = musc_targ_len + .016*2.54/8.89 +
-     >          15./30420. +  .020*2.54/8.89
+C  HMS
+C  20 mil Al scattering chamber window (X0=8.89cm)
+C  24.61 cm air (X0=30420cm)
+C spectrometer entrance window
+C  15 mil Kevlar (X0=74.6 cm)
+C   5 mil Mylar (X0=28.7 cm)
+
+	  if(ispec.eq.2) then
+	     musc_targ_len = musc_targ_len + .020*2.54/8.89 +
+     >          57.27/30420. +  .020*2.54/8.89
+	  elseif(ispec.eq.1) then
+	     musc_targ_len = musc_targ_len + .020*2.54/8.89 +
+     >          24.61/30420. +  .015*2.54/74.6 + .005*2.54/28.7
+	  endif
+
 c
 	  if (ms_flag ) call musc(m2,p_spec*(1.+dpp_s/100.),
      > musc_targ_len,dydz_s,dxdz_s)
@@ -515,7 +566,7 @@ c
 !-----------------------------------------------------------------------------
 ! TH - START TARGET APERTURE TESTS
 ! ----------------------------------------------------------------------------
-
+! This is for SHMS only
 ! Restore xs to values at pivot. 
 !	   xs = x_transp
 !	   ys = y_transp
@@ -535,12 +586,14 @@ c
 
 ! ----------------------------------------------------------------------------
 	  if(ispec.eq.2) then
+
 	     call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z, 
      >          dxdz_s, dydz_s,
      >		x_fp, dx_fp, y_fp, dy_fp, m2, shms_spec,
-     >		ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
+     >		ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
      >          pathlen, 5,
      >          .false.)
+
 	     if (spec_ntuple) then
 		shms_spec(58) = stop_id
 c            if (ok_spec) spec(58) =1.
@@ -648,6 +701,9 @@ C Close NTUPLE file.
 	   call hrout(1411,i,' ')
 	   if (spec_ntuple) call hrout(1412,i,' ')
 	   call hrend('HUT')
+	elseif(ispec.eq.1) then
+	   call hrout(1,i,' ')
+	   call hrend('HUT')
 	endif
 
 	write (chanout,1002)
@@ -656,52 +712,74 @@ C Close NTUPLE file.
 
 	write (chanout,1005) n_trials
 
+	if(ispec.eq.1) then
+	   armSTOP_successes=hSTOP_successes
+	   armSTOP_trials=hSTOP_trials
+	elseif(ispec.eq.2) then
+	   armSTOP_successes=shmsSTOP_successes
+	   armSTOP_trials=shmsSTOP_trials
+	endif
+
 C Indicate where particles are lost in spectrometer.
+	if(ispec.eq.2) then
+	   write (chanout,1015)
+     >	   shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct,
+     >	   shmsSTOP_slit_hor,shmsSTOP_slit_vert,shmsSTOP_slit_oct,
+     >	   shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex,
+     >     shmsSTOP_HB_out,shmsSTOP_Q1_in,shmsSTOP_Q1_men,
+     >     shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out,
+     >	   shmsSTOP_Q2_in,shmsSTOP_Q2_men,shmsSTOP_Q2_mid,
+     >     shmsSTOP_Q2_mex,shmsSTOP_Q2_out,
+     >     shmsSTOP_Q3_in,shmsSTOP_Q3_men,shmsSTOP_Q3_mid,
+     >     shmsSTOP_Q3_mex,shmsSTOP_Q3_out,
+     >	   shmsSTOP_D1_in,shmsSTOP_D1_flr,shmsSTOP_D1_men,
+     >     shmsSTOP_D1_mid1,shmsSTOP_D1_mid2,shmsSTOP_D1_mid3,
+     >     shmsSTOP_D1_mid4,shmsSTOP_D1_mid5,shmsSTOP_D1_mid6,
+     >     shmsSTOP_D1_mid7,shmsSTOP_D1_mex,shmsSTOP_D1_out,
+     >     shmsSTOP_BP_in, shmsSTOP_BP_out
 
-	write (chanout,1015)
-     >	shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct,
-     >	shmsSTOP_slit_hor,shmsSTOP_slit_vert,shmsSTOP_slit_oct,
-     >	shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex,
-     >  shmsSTOP_HB_out,shmsSTOP_Q1_in,shmsSTOP_Q1_men,
-     >  shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out,
-     >	shmsSTOP_Q2_in,shmsSTOP_Q2_men,shmsSTOP_Q2_mid,
-     >  shmsSTOP_Q2_mex,shmsSTOP_Q2_out,
-     >  shmsSTOP_Q3_in,shmsSTOP_Q3_men,shmsSTOP_Q3_mid,
-     >  shmsSTOP_Q3_mex,shmsSTOP_Q3_out,
-     >	shmsSTOP_D1_in,shmsSTOP_D1_flr,shmsSTOP_D1_men,
-     >  shmsSTOP_D1_mid1,shmsSTOP_D1_mid2,shmsSTOP_D1_mid3,
-     >  shmsSTOP_D1_mid4,shmsSTOP_D1_mid5,shmsSTOP_D1_mid6,
-     >  shmsSTOP_D1_mid7,shmsSTOP_D1_mex,shmsSTOP_D1_out,
-     >  shmsSTOP_BP_in, shmsSTOP_BP_out
+	   write (chanout,1006)
+     >	   shmsSTOP_trials,shmsSTOP_hut,shmsSTOP_dc1,shmsSTOP_dc2,
+     >     shmsSTOP_s1,shmsSTOP_s2,shmsSTOP_s3,shmsSTOP_cal,
+     >     shmsSTOP_successes,shmsSTOP_successes
 
-	write (chanout,1006)
-     >	shmsSTOP_trials,shmsSTOP_hut,shmsSTOP_dc1,shmsSTOP_dc2,
-     >  shmsSTOP_s1,shmsSTOP_s2,shmsSTOP_s3,shmsSTOP_cal,
-     >  shmsSTOP_successes,shmsSTOP_successes
+	elseif(ispec.eq.1) then
+	   write (chanout,1016)
+     >	   hSTOP_slit_hor,hSTOP_slit_vert,hSTOP_slit_oct,
+     >	   hSTOP_Q1_in,hSTOP_Q1_mid,hSTOP_Q1_out,
+     >	   hSTOP_Q2_in,hSTOP_Q2_mid,hSTOP_Q2_out,
+     >	   hSTOP_Q3_in,hSTOP_Q3_mid,hSTOP_Q3_out,
+     >	   hSTOP_D1_in,hSTOP_D1_out
+
+	   write (chanout,1007)
+     >	   hSTOP_trials,hSTOP_hut,hSTOP_dc1,hSTOP_dc2,hSTOP_scin,hSTOP_cal,
+     >     hSTOP_successes,hSTOP_successes
+	endif
+
 
 C Compute reconstruction resolutions.
 
-	if (shmsSTOP_successes.eq.0) shmsSTOP_successes=1
-	t1 = sqrt(max(0.,dpp_var(2)/shmsSTOP_successes 
-     > - (dpp_var(1)/shmsSTOP_successes)**2))
-	t2 = sqrt(max(0.,dth_var(2)/shmsSTOP_successes 
-     > - (dth_var(1)/shmsSTOP_successes)**2))
-	t3 = sqrt(max(0.,dph_var(2)/shmsSTOP_successes 
-     > - (dph_var(1)/shmsSTOP_successes)**2))
-	t4 = sqrt(max(0.,ztg_var(2)/shmsSTOP_successes 
-     > - (ztg_var(1)/shmsSTOP_successes)**2))
+	if (armSTOP_successes.eq.0) armSTOP_successes=1
+	t1 = sqrt(max(0.,dpp_var(2)/armSTOP_successes 
+     > - (dpp_var(1)/armSTOP_successes)**2))
+	t2 = sqrt(max(0.,dth_var(2)/armSTOP_successes 
+     > - (dth_var(1)/armSTOP_successes)**2))
+	t3 = sqrt(max(0.,dph_var(2)/armSTOP_successes 
+     > - (dph_var(1)/armSTOP_successes)**2))
+	t4 = sqrt(max(0.,ztg_var(2)/armSTOP_successes 
+     > - (ztg_var(1)/armSTOP_successes)**2))
 
-	write (chanout,1011) dpp_var(1)/shmsSTOP_successes,t1,
-     > dth_var(1)/shmsSTOP_successes,
-     >		t2,dph_var(1)/shmsSTOP_successes,t3,
-     > ztg_var(1)/shmsSTOP_successes,t4
+	write (chanout,1011) dpp_var(1)/armSTOP_successes,t1,
+     > dth_var(1)/armSTOP_successes,
+     >		t2,dph_var(1)/armSTOP_successes,t3,
+     > ztg_var(1)/armSTOP_successes,t4
 
-	write(6,*) shmsSTOP_trials,' Trials',shmsSTOP_successes
+	write(6,*) armSTOP_trials,' Trials',armSTOP_successes
      > ,' Successes'
-	write (6,1011) dpp_var(1)/shmsSTOP_successes,t1,
-     > dth_var(1)/shmsSTOP_successes,
-     >		t2,dph_var(1)/shmsSTOP_successes,t3,
-     > ztg_var(1)/shmsSTOP_successes,t4
+	write (6,1011) dpp_var(1)/armSTOP_successes,t1,
+     > dth_var(1)/armSTOP_successes,
+     >		t2,dph_var(1)/armSTOP_successes,t3,
+     > ztg_var(1)/armSTOP_successes,t4
 
 C ALL done!
 
@@ -742,6 +820,17 @@ C =============================== Format Statements ============================
      >  i11,' Trials made it thru the detectors and were reconstructed',/
      >  i11,' Trials passed all cuts and were histogrammed.',/
      >  )
+
+ 1007	format(i11,' Initial Trials',/
+     >  i11,' Trials made it to the hut',/
+     >  i11,' Trial cut in dc1',/
+     >  i11,' Trial cut in dc2',/
+     >  i11,' Trial cut in scin',/
+     >  i11,' Trial cut in cal',/
+     >  i11,' Trials made it thru the detectors and were reconstructed',/
+     >  i11,' Trials passed all cuts and were histogrammed.',/
+     >  )
+
 
 !1008	format(8i)
 !1009	format(1x,i4,g,i)
@@ -794,6 +883,23 @@ C =============================== Format Statements ============================
      >  i11,' stopped in D1 EXIT',/
      >  i11,' stopped in BP ENTRANCE',/
      >  i11,' stopped in BP EXIT',/
+     >  )
+
+ 1016	format(/,
+     >  i11,' stopped in the FIXED SLIT HOR',/
+     >  i11,' stopped in the FIXED SLIT VERT',/
+     >  i11,' stopped in the FIXED SLIT OCTAGON',/
+     >  i11,' stopped in Q1 ENTRANCE',/
+     >  i11,' stopped in Q1 MIDPLANE',/
+     >  i11,' stopped in Q1 EXIT',/
+     >  i11,' stopped in Q2 ENTRANCE',/
+     >  i11,' stopped in Q2 MIDPLANE',/
+     >  i11,' stopped in Q2 EXIT',/
+     >  i11,' stopped in Q3 ENTRANCE',/
+     >  i11,' stopped in Q3 MIDPLANE',/
+     >  i11,' stopped in Q3 EXIT',/
+     >  i11,' stopped in D1 ENTRANCE',/
+     >  i11,' stopped in D1 EXIT',/
      >  )
 
 1100	format('!',79('-'),/,'! ',a,/,'!')
