@@ -499,7 +499,11 @@ C Save init values for later.
 	  dph_init = dxdz_s*1000.		!mr
 
 C Calculate multiple scattering length of target
-	  cos_ev = (cos_ts+dydz_s*sin_ts)/sqrt(1+dydz_s**2+dxdz_s**2)
+	  if(ispec.eq.1) then ! spectrometer on right
+	     cos_ev = (cos_ts+dydz_s*sin_ts)/sqrt(1+dydz_s**2+dxdz_s**2)
+	  elseif(ispec.eq.2) then ! spectrometer on left
+	     cos_ev = (cos_ts-dydz_s*sin_ts)/sqrt(1+dydz_s**2+dxdz_s**2)
+	  endif
 	  th_ev = acos(cos_ev)
 	  sin_ev = sin(th_ev)
 
@@ -514,7 +518,7 @@ cXZ	     musc_targ_len = musc_targ_len +(gen_lim(6)/2. + z)    ! before scatteri
 cXZ	     musc_targ_len = musc_targ_len + 0.0127/8.89         ! entrance window
 cXZ	     musc_targ_len = musc_targ_len 
 cXZ     >	     + 0.0138*(2./(2.**2.-(z*sin_ev)**2.)**0.5)/8.89 ! downstream window
-C Case 1 : cryo target (2.65 inches diamater --> 3.37 cm radius)
+C Case 1 : cryo target (2.65 inches diameter --> 3.37 cm radius)
 C   Liquid + 5 mil Al (X0=8.89cm) beer can
 C DG - put back beer can stuff...
 ! TH - hardcoded values may cause trouble in gfortran
