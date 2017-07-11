@@ -1,4 +1,4 @@
-	program mc_shms_single
+	program mc_single_arm
 
 C+______________________________________________________________________________
 !
@@ -76,6 +76,7 @@ C Control flags (from input file)
 	integer*4 p_flag			!particle identification
 	logical*4 ms_flag
 	logical*4 wcs_flag
+	logical*4 store_all
 
 c	common /hutflag/ cer_flag,vac_flag
 C Hardwired control flags.
@@ -379,6 +380,13 @@ C Strip off header
      > stop 'ERROR: wcs_flag in setup file!'
 	if (tmp_int.eq.1) wcs_flag = .true.
 
+! Read in flag to keep all events - success or not
+	read (chanin,1001) str_line
+	write(*,*),str_line(1:last_char(str_line))
+	if (.not.rd_int(str_line,tmp_int)) 
+     > stop 'ERROR: store_all in setup file!'
+	if (tmp_int.eq.1) store_all = .true.
+
 
 C Set particle masses.
 	m2 = me2			!default to electron
@@ -557,7 +565,7 @@ C   5 mil Mylar (X0=28.7 cm)
 
 	  if(ispec.eq.2) then
 	     musc_targ_len = musc_targ_len + .020*2.54/8.89 +
-     >          57.27/30420. +  .020*2.54/8.89
+     >          57.27/30420. +  .010*2.54/8.89
 	  elseif(ispec.eq.1) then
 	     musc_targ_len = musc_targ_len + .020*2.54/8.89 +
      >          24.61/30420. +  .015*2.54/74.6 + .005*2.54/28.7
@@ -620,62 +628,6 @@ c            if (ok_spec) spec(58) =1.
 	    ztar_recon = + y_s / sin_ts 
             ytar_recon = y_s
 
-
-C Output NTUPLE entry.
-C This is ugly, but want the option to have different outputs
-C for spectrometer ntuples
-	    if(ispec.eq.2) then
-	       if (hut_ntuple) then
-		  shms_hut(1) = x_fp
-		  shms_hut(2) = y_fp
-		  shms_hut(3) = dx_fp
-		  shms_hut(4) = dy_fp
-		  shms_hut(5) = ztar_init
-		  shms_hut(6) = ytar_init
-		  shms_hut(7) = dpp_init
-		  shms_hut(8) = dth_init/1000.
-		  shms_hut(9) = dph_init/1000.
-		  shms_hut(10) = ztar_recon
-		  shms_hut(11) = ytar_recon
-		  shms_hut(12)= dpp_recon
-		  shms_hut(13)= dth_recon/1000.
-		  shms_hut(14)= dph_recon/1000.
-		  shms_hut(15)= xtar_init
-		  shms_hut(16)= fry
-		  shms_hut(17)= xs_num
-		  shms_hut(18)= ys_num
-		  shms_hut(19)= xc_sieve
-		  shms_hut(20)= yc_sieve
-		  if (use_front_sieve) then
-		     shms_hut(17)= xsfr_num
-		     shms_hut(18)= ysfr_num
-		     shms_hut(19)= xc_frsieve
-		     shms_hut(20)= yc_frsieve
-		  endif
-		  call hfn(1411,shms_hut)
-	       endif
-	    endif
-
-	    if(ispec.eq.1) then
-	       if (hut_ntuple) then
-		  hms_hut(1) = x_fp
-		  hms_hut(2) = y_fp
-		  hms_hut(3) = dx_fp
-		  hms_hut(4) = dy_fp
-		  hms_hut(5) = ytar_init
-		  hms_hut(6) = dpp_init
-		  hms_hut(7) = dth_init/1000.
-		  hms_hut(8) = dph_init/1000.
-		  hms_hut(9) = ytar_recon
-		  hms_hut(10)= dpp_recon
-		  hms_hut(11)= dth_recon/1000.
-		  hms_hut(12)= dph_recon/1000.
-		  hms_hut(13) = fry
-		  hms_hut(14)= ztar_init 
-		  call hfn(1,hms_hut)
-	       endif
-	    endif
-
 C Compute sums for calculating reconstruction variances.
 	    dpp_var(1) = dpp_var(1) + (dpp_recon - dpp_init)
 	    dth_var(1) = dth_var(1) + (dth_recon - dth_init)
@@ -686,7 +638,63 @@ C Compute sums for calculating reconstruction variances.
 	    dth_var(2) = dth_var(2) + (dth_recon - dth_init)**2
 	    dph_var(2) = dph_var(2) + (dph_recon - dph_init)**2
 	    ztg_var(2) = ztg_var(2) + (ztar_recon - ztar_init)**2
-	  endif			!Incremented the arrays
+	 endif			!Incremented the arrays
+
+
+C Output NTUPLE entry.
+C This is ugly, but want the option to have different outputs
+C for spectrometer ntuples
+	 if(ispec.eq.2) then
+	    if (store_all.OR.(hut_ntuple.AND.ok_spec)) then
+	       shms_hut(1) = x_fp
+	       shms_hut(2) = y_fp
+	       shms_hut(3) = dx_fp
+	       shms_hut(4) = dy_fp
+	       shms_hut(5) = ztar_init
+	       shms_hut(6) = ytar_init
+	       shms_hut(7) = dpp_init
+	       shms_hut(8) = dth_init/1000.
+	       shms_hut(9) = dph_init/1000.
+	       shms_hut(10) = ztar_recon
+	       shms_hut(11) = ytar_recon
+	       shms_hut(12)= dpp_recon
+	       shms_hut(13)= dth_recon/1000.
+	       shms_hut(14)= dph_recon/1000.
+	       shms_hut(15)= xtar_init
+	       shms_hut(16)= fry
+	       shms_hut(17)= xs_num
+	       shms_hut(18)= ys_num
+	       shms_hut(19)= xc_sieve
+	       shms_hut(20)= yc_sieve
+	       if (use_front_sieve) then
+		  shms_hut(17)= xsfr_num
+		  shms_hut(18)= ysfr_num
+		  shms_hut(19)= xc_frsieve
+		  shms_hut(20)= yc_frsieve
+	       endif
+	       call hfn(1411,shms_hut)
+	    endif
+	 endif
+
+	 if(ispec.eq.1) then
+	    if (hut_ntuple.and.ok_spec) then
+	       hms_hut(1) = x_fp
+	       hms_hut(2) = y_fp
+	       hms_hut(3) = dx_fp
+	       hms_hut(4) = dy_fp
+	       hms_hut(5) = ytar_init
+	       hms_hut(6) = dpp_init
+	       hms_hut(7) = dth_init/1000.
+	       hms_hut(8) = dph_init/1000.
+	       hms_hut(9) = ytar_recon
+	       hms_hut(10)= dpp_recon
+	       hms_hut(11)= dth_recon/1000.
+	       hms_hut(12)= dph_recon/1000.
+	       hms_hut(13) = fry
+	       hms_hut(14)= ztar_init 
+	       call hfn(1,hms_hut)
+	    endif
+	 endif
 
 C We are done with this event, whether GOOD or BAD.
 C Loop for remainder of trials.

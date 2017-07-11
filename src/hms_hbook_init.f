@@ -23,7 +23,7 @@ cmkj	  iquest(10) = 510000
 !   http://wwwasd.web.cern.ch/wwwasd/cgi-bin/listpawfaqs.pl/7
 ! the file size is limited to ~260M no matter how I change iquest !
 cmkj	  call hropen(30,'HUT',filename,'NQ',4096,i) !CERNLIB
-      call hropen(30,'HUT',filename,'N',1024,i) !CERNLIB
+      call hropen(30,'HUT',filename,'N',4096,i) !CERNLIB
  
       if (i.ne.0) then
          write(*,*),'HROPEN error: istat = ',i
