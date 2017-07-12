@@ -9,12 +9,12 @@ C HBOOK/NTUPLE common block and parameters.
       parameter	(pawc_size = 1000000)
       common		/pawc/ hbdata(pawc_size)
       integer*4	hbdata
-      character*8	hut_nt_names(20)/
+      character*8	hut_nt_names(21)/
      >     'psxfp', 'psyfp', 'psxpfp', 'psypfp',
      >     'psztari','psytari', 'psdeltai', 'psyptari', 'psxptari',
      >     'psztar','psytar', 'psdelta', 'psyptar', 'psxptar', 
      >     'psxtari','fry','xsnum','ysnum','xsieve'
-     >     ,'ysieve'/
+     >     ,'ysieve','stop_id'/
 
       character*8	spec_nt_names(58)/
      >     's_hb1_x', 's_hb1_y','s_hb2_x', 's_hb2_y','s_hb3_x', 
@@ -49,7 +49,7 @@ cmkj	  call hropen(30,'HUT',filename,'NQ',4096,i) !CERNLIB
          stop
       endif
 
-      call hbookn(1411,'HUT NTUPLE',20,'HUT',10000,hut_nt_names)
+      call hbookn(1411,'HUT NTUPLE',21,'HUT',10000,hut_nt_names)
       if (spec_ntuple) then
          call hbookn(1412,'SPEC NTU',58,'HUT',10000,spec_nt_names)
       endif

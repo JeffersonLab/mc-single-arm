@@ -20,7 +20,8 @@ my_objs = hms_hbook_init.o shms_hbook_init.o \
 MYOS := $(subst -,,$(shell uname))
 #mess $(MYOS)
 
-CERNLIBS = -lgeant$(GEANTVER) -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
+#CERNLIBS = -lgeant$(GEANTVER) -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
+CERNLIBS = -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
 
 ifeq ($(MYOS),HPUX)
   ifneq (,$(findstring 09,$(shell uname -r)))

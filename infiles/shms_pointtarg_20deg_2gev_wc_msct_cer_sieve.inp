@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------------
-! Input file for MC_SMS_SINGLE 					
+! Input file for MC_SINGLE_ARM 					
 !------------------------------------------------------------------------------
    4000000	Monte-Carlo trials
         2       Spectrometer (1=HMS, 2=SHMS, 3=..)
@@ -32,4 +32,4 @@
      0	particle identification :e=0, p=1, d=2, pi=3, ka=4
      1	flag for multiple scattering
      1	flag for wire chamber smearing
-
+     1	flag for storing all events (including failed events with stop_id > 0)

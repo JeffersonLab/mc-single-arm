@@ -14,10 +14,10 @@ C-______________________________________________________________________________
 	include 'constants.inc'
 
 c Vector (real*4) for hut ntuples - needs to match dimension of variables
-	real*4		shms_hut(20)
+	real*4		shms_hut(21)
 	real*4          shms_spec(58)
 
-	real*4          hms_hut(14)
+	real*4          hms_hut(15)
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
@@ -468,9 +468,9 @@ C Version for a spectrometer on the left-hand side: (i.e. SHMS)
 	  elseif(ispec.eq.1) then ! HMS
 C Below assumes that HMS is on the right-hand side of the beam
 C line (looking downstream).
-	     xs    = -y
-	     ys    = x * cos_ts + z * sin_ts
-	     zs    = z * cos_ts - x * sin_ts
+	     x_s    = -y
+	     y_s    = x * cos_ts + z * sin_ts
+	     z_s    = z * cos_ts - x * sin_ts
 	  else
 	     write(6,*) 'unknown spectrometer: stopping'
 	     stop
@@ -481,9 +481,9 @@ C DJG If the spectrometer if too low (positive x offset) a particle
 C DJG at "x=0" will appear in the spectrometer to be a little high
 C DJG so we should subtract the offset
 
-	  xs = xs - spec_xoff
-	  ys = ys - spec_yoff
-	  zs = zs - spec_zoff
+	  x_s = x_s - spec_xoff
+	  y_s = y_s - spec_yoff
+	  z_s = z_s - spec_zoff
 
 	  dpp_s  = dpp
 	  dxdz_s = dxdz
@@ -599,12 +599,11 @@ c
 ! ----------------------------------------------------------------------------
 	  if(ispec.eq.2) then
 
-	     call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z, 
+	     call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z_s, 
      >          dxdz_s, dydz_s,
      >		x_fp, dx_fp, y_fp, dy_fp, m2, shms_spec,
      >		ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
-     >          pathlen, 5,
-     >          .false.)
+     >          pathlen, 5)
 
 	     if (spec_ntuple) then
 		shms_spec(58) = stop_id
@@ -612,7 +611,8 @@ c            if (ok_spec) spec(58) =1.
 		call hfn(1412,shms_spec)
 	     endif
 	  elseif(ispec.eq.1) then
-	     call mc_hms(p_spec, th_spec, dpps, xs, ys, zs, dxdzs, dydzs,
+	     call mc_hms(p_spec, th_spec, dpp_s, x_s, y_s, z_s, 
+     >          dxdz_s, dydz_s,
      >          x_fp, dx_fp, y_fp, dy_fp, m2,
      >          ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
      >          pathlen)
@@ -666,6 +666,7 @@ C for spectrometer ntuples
 	       shms_hut(18)= ys_num
 	       shms_hut(19)= xc_sieve
 	       shms_hut(20)= yc_sieve
+	       shms_hut(21)= stop_id
 	       if (use_front_sieve) then
 		  shms_hut(17)= xsfr_num
 		  shms_hut(18)= ysfr_num
@@ -677,7 +678,7 @@ C for spectrometer ntuples
 	 endif
 
 	 if(ispec.eq.1) then
-	    if (hut_ntuple.and.ok_spec) then
+	    if (store_all.OR.(hut_ntuple.AND.ok_spec)) then
 	       hms_hut(1) = x_fp
 	       hms_hut(2) = y_fp
 	       hms_hut(3) = dx_fp
@@ -692,6 +693,11 @@ C for spectrometer ntuples
 	       hms_hut(12)= dph_recon/1000.
 	       hms_hut(13) = fry
 	       hms_hut(14)= ztar_init 
+	       if(ok_spec) then
+		  hms_hut(15)= 0
+	       else
+		  hms_hut(15)=99
+	       endif
 	       call hfn(1,hms_hut)
 	    endif
 	 endif

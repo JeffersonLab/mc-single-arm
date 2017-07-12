@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------------
-! Input file for MC_SMS_SINGLE 					
+! Input file for MC_SINGLE_ARM 					
 ! Default: 8 GeV electrons, 90 deg scattering angle, 30 cm vertex,
 !         -10%<delta<+22%
 ! Nominal target lengths: 10cm, 20cm, 30cm (see HallC-doc-466 for further 
@@ -34,6 +34,7 @@
      0.0        Spectrometer z offset (cm)
      0.0        Spectrometer xp offset (mr)
      0.0        Spectrometer yp offset (mr)
-     0	particle identification :e=0, p=1, d=2, pi=3, ka=4
-     1	flag for multiple scattering
-     1	flag for wire chamber smearing
+     0		particle identification :e=0, p=1, d=2, pi=3, ka=4
+     1		flag for multiple scattering
+     1		flag for wire chamber smearing
+     1	flag for storing all events (including failed events with stop_id > 0)
