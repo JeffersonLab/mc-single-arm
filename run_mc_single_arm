@@ -1,0 +1,5 @@
+#!/bin//tcsh 
+cd src
+mc_single_arm << endofinput >! ../runout/$1.out
+$1
+endofinput

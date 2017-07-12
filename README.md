@@ -1,13 +1,15 @@
-mc_shms_single
+mc_single_arm
 ==============
 
-Hall C single arm Monte Carlo 
+Hall C single arm Monte Carlo for HMS and SHMS 
 
 
 
-To compile type "make"
+To compile type "make" in the src directory.
+NOTE: Make sure paths to Cern libararies are defined.
+On JLab machines, do "setup cernlib/2005".
 
-Main code is mc_shms_single.f
+Main code is mc_single_arm.f
 
 If include files are changed it is best to do "make Clean" and then "make"
 since the Makefile is not smart enough to look for dependency
@@ -15,14 +17,18 @@ since the Makefile is not smart enough to look for dependency
 Running code
 ------------
 
-mc_shms_single 
-(ask for input file name ( assumed in infiles subdirectory)
+Easiest way is to use "run_mc_single_arm <filename>"
+
+Alternately:
+cd src
+mc_single_arm 
+(ask for input file name (assumed in infiles subdirectory))
 
 * Input file : infile_name.inp
 * Output file is at outfiles/infile_name.out 
 * The hbook file is at worksim/infile_name.rzdat
-* Hard coded flags in mc_shms_single.f 
-** hut_ntuple : Write out ntuple 1411 described below. (true)
+* Hard coded flags in mc_single_arm.f 
+** hut_ntuple : Write out ntuple (1 for HMS and 1411 for SHMS) described below. (true)
 ** spec_ntuple: Write out ntuple 1412 described below (false)
 ** decay_flag :	Allow decay of particle(false)
 ** use_front_sieve : Pass particles through front sieve (false)   
@@ -44,8 +50,8 @@ Code flow
 ** If target length greater than 3cm assume LH2 cryotarget for multiple scattering calculation.
 **  If target length less than 3cm assume simple solid target for multiple scattering calculation.
 * calulated mutliple scattering in scattering chamber window, air and spectrometer entrance window.
-* Call the mc_shms subroutine to transport the particle through SHMS apertures and to the focal plane.
-* At the focal plane drift the particle through  1st Cerenkov or vacuum pipe ( depended in flag in input file),the drift chamber, scintillators, 2nd cerenkov and calorimeter to check if it hits them . 
+* Call the mc_shms/mc_hms subroutine to transport the particle through SHMS/HMS apertures and to the focal plane.
+* At the focal plane drift the particle through  1st Cerenkov or vacuum pipe (for SHMS only, depending on flag in input file),the drift chamber, scintillators, 2nd cerenkov and calorimeter to check if it hits them . 
 * As it passes through the drift chamber randomly change the position according to the presumed DC resolution and fit the positions and calculate the focal plane positions and angles.
 * From focal plane calculate the reconstructed target quantities ytar,yptar,xptar and delta using the optics matrix. Note that for now use the known x target position in the optics matrix calculations. To mimic what would be in the analysis, need to calculate xtar from the reconstructed quantities using the raster vertical position and then recalculate the reconstructed quantities with updated xtar.
 * If particle makes it to the focal plane and hits all detectors the event variables are put in ntuple.
@@ -54,6 +60,7 @@ Code flow
 
 Sub Directories
 ---------------
+* hms: HMS subroutines
 * shms  : SHMS subroutines
 * infiles : input files
 * outfiles : the output files 
@@ -70,24 +77,24 @@ Info on infiles
 * Up to the experiment to decide if the 1st Cerenkov detector will be needed for the experiemnt
 * If 1st Cerenkov not used then can replace with vacuum pipe. Option of helium bag is availble. this was for study.  
 
-Ntuple variables in hut ntuple ntuple id = 1411 
+Ntuple variables in SHMS hut ntuple ntuple id = 1411 
 ---------------------
-* hsxfp  Focal plane vertical position 
-* hsyfp  Focal plane horizontal position
-* hsxpfp Focal plane vertical angle=dx/dz
-* hsypfp Focal plane horizontal angle=dy/dz
-* hsztari  Initial random position along the target
-* hsytari  Initial y (horizontal) position at the z=0 plane perpendicular to central ray of SHMS
-* hsdeltai Initial random  delta = (p-pcent)/pcent
-* hsyptari Initial random  horizontal angle=dy/dz
-* hsxptari Initial random  vertical angle=dx/dz
-* hsztar  Reconstructed position along the target
-* hsytar   Reconstructed 
-* hsdelta   Reconstructed 
-* hsyptar  Reconstructed 
-* hsxptar Reconstructed 
-* hsxtari  Initial x (vertical) position at the z=0 plane perpendicular to central ray of SHMS
-* yrast   Initial random vertical raster position
+* psxfp  Focal plane vertical position 
+* psyfp  Focal plane horizontal position
+* psxpfp Focal plane vertical angle=dx/dz
+* psypfp Focal plane horizontal angle=dy/dz
+* psztari  Initial random position along the target
+* psytari  Initial y (horizontal) position at the z=0 plane perpendicular to central ray of SHMS
+* psdeltai Initial random  delta = (p-pcent)/pcent
+* psyptari Initial random  horizontal angle=dy/dz
+* psxptari Initial random  vertical angle=dx/dz
+* psztar  Reconstructed position along the target
+* psytar   Reconstructed 
+* psdelta   Reconstructed 
+* psyptar  Reconstructed 
+* psxptar Reconstructed 
+* psxtari  Initial x (vertical) position at the z=0 plane perpendicular to central ray of SHMS
+* fry   Initial random vertical raster position
 * xsnum   sieve slit vertical hole number ( hole number at front sieve if use_front_sieve = true)
 * ysnum   sieve slit horizontal hole number ( hole number at front sieve if use_front_sieve = true)
 * xsieve   sieve slit vertical position (cm)  ( position at front sieve if use_front_sieve = true)

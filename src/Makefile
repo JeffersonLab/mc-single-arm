@@ -1,37 +1,18 @@
 ## This makefile must be executed with gmake (gnu make).
-
-## These will have to be modified when setting up your own simc.  They
-## point to the software necessary to run simc.
-
-## ARGONNE DEFAULT SETUP FLAGS:
-#simcdir = .
-#Csoft = /disk1/users/reinhold/Csoft/05Dec1996
-#CERN_ROOT = /disk1/lib/cern/97a
-
-## CEBAF DEFAULT SETUP FLAGS: ALSO NEED TO UNCOMMENT CERN_ROOT DEFNS FOR HP/SUN/...
-simcdir = .
-#Csoft = ../simc_gfortran/CTP/O.Linux/Linux
-#Csoft = /group/c-gep/jones/Linux_fc8
-
-
-## THE REST SHOULD BE OK WITHOUT MODIFICATION.
-
+## On JLab systems, make sure you do "setup cernlib/2005" before you do anything else.
+## On other systems, make sure you have appropriate Cernlib stuff installed and
+## paths define
 RM        = rm -f 
 SHELL     = /bin/sh
 
-#SPEC      = ./hms_simc/
-SPEC      = ../shms/
+H      = hms/
+SH      = shms/
+SHARE	  = shared/
 
-SHARE	  = ../shared/
-
-my_objs = $(SPEC)mc_shms.o $(SPEC)mc_shms_hut.o $(SPEC)mc_shms_recon.o \
+my_objs = hms_hbook_init.o shms_hbook_init.o \
+          $(H)mc_hms.o $(H)mc_hms_hut.o $(H)mc_hms_recon.o \
+          $(SH)mc_shms.o $(SH)mc_shms_hut.o $(SH)mc_shms_recon.o \
 	  $(SHARE)project.o $(SHARE)transp.o $(SHARE)rotate_haxis.o \
-	  $(SHARE)rotate_vaxis.o $(SHARE)locforunt.o $(SHARE)musc.o \
-          $(SHARE)musc_ext.o $(SHARE)stringlib.o mt19937.o gauss1.o \
-          loren.o
-
-sub_objs = $(SPEC)mc_shms.o $(SPEC)mc_shms_hut.o $(SPEC)mc_shms_recon_sub.o \
-	  $(SHARE)project.o $(SHARE)transp_sub.o $(SHARE)rotate_haxis.o \
 	  $(SHARE)rotate_vaxis.o $(SHARE)locforunt.o $(SHARE)musc.o \
           $(SHARE)musc_ext.o $(SHARE)stringlib.o mt19937.o gauss1.o \
           loren.o
@@ -39,7 +20,8 @@ sub_objs = $(SPEC)mc_shms.o $(SPEC)mc_shms_hut.o $(SPEC)mc_shms_recon_sub.o \
 MYOS := $(subst -,,$(shell uname))
 #mess $(MYOS)
 
-CERNLIBS = -lgeant$(GEANTVER) -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
+#CERNLIBS = -lgeant$(GEANTVER) -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
+CERNLIBS = -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
 
 ifeq ($(MYOS),HPUX)
   ifneq (,$(findstring 09,$(shell uname -r)))
@@ -96,7 +78,7 @@ endif
 ##  ABSOFT=/apps/absoft/absoft-8.2/opt/absoft
 ##  CERN_ROOT = /apps/cernlib/i386_rhel3/2003
 ##  FABSFLAGS=-O -V -W -f -s -N1 -B108 -B100 -N90 -N22 -N2 -N113
-##  INCLUDES=-I.,..,./sos,$(SPEC),./hrsr,./hrsl,./shms,$(Csoft)/SRC/INCLUDE
+##  INCLUDES=-I.,..,./sos,$(SH),./hrsr,./hrsl,./shms,$(Csoft)/SRC/INCLUDE
 ##  EXTRAFLAGS=-DABSOFTFORTRAN
 ##  FFLAGS= $(INCLUDES) $(FABSFLAGS) $(EXTRAFLAGS)
 ##  FFLAG1=$(FFLAGS) -c
@@ -110,10 +92,10 @@ endif
 
 ifeq ($(MYOS),Linux)
 #  CERN_ROOT = /apps/cernlib/i386_fc8/2005
-  FFLAGSA=-O -W -ffixed-line-length-132 -ff2c -fno-automatic -fdefault-real-8
+  FFLAGSA=-O -ffixed-line-length-132 -ff2c -fno-automatic -fdefault-real-8
 #  FFLAGSA=-O -V -W -f -s -N1 -B108 -B100 -N90 -N22 -N2 -N113
-#  INCLUDES=-I.,..,./sos,$(SPEC),./hrsr,./hrsl,./shms,$(Csoft)/SRC/INCLUDE
-  INCLUDES=-I.,..,./sos,$(SPEC),./hrsr,./hrsl,./shms,$(Csoft)/INCLUDE
+#  INCLUDES=-I.,..,./sos,$(SH),./hrsr,./hrsl,./shms,$(Csoft)/SRC/INCLUDE
+#  INCLUDES=-I.,..,./sos,$(SH),./hrsr,./hrsl,./shms,$(Csoft)/INCLUDE
   FFLAGS= $(INCLUDES) $(FFLAGSA)
   FFLAG1=$(FFLAGS) -c
   OTHERLIBS =  -L$(CERN_ROOT)/lib $(CERNLIBS) -L/usr/lib
@@ -157,15 +139,11 @@ endif
 %.o: %.f
 	$(F77) $(FFLAGS) -c $< -o $@
 
-all: mc_shms_single 
-#mc_shms_single_sub
+all: mc_single_arm 
 
-mc_shms_single: $(my_objs) Makefile mc_shms_single.o
-	$(F77) -o $@ $(FFLAGS) mc_shms_single.o $(my_objs) $(OTHERLIBS)
-
-mc_shms_single_sub: $(sub_objs) Makefile mc_shms_single_sub.o
-	$(F77) -o $@ $(FFLAGS) mc_shms_single_sub.o $(sub_objs) $(OTHERLIBS)
+mc_single_arm: $(my_objs) Makefile mc_single_arm.o
+	$(F77) -o $@ $(FFLAGS) mc_single_arm.o $(my_objs) $(OTHERLIBS)
 
 clean:
-	rm -f *.o $(SPEC)*.o $(SHARE)*.o mc_shms_single
+	rm -f *.o $(H)*.o $(SH)*.o $(SHARE)*.o mc_single_arm
 

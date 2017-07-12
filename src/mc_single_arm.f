@@ -1,4 +1,4 @@
-	program mc_shms_single
+	program mc_single_arm
 
 C+______________________________________________________________________________
 !
@@ -8,39 +8,16 @@ C-______________________________________________________________________________
 
 	implicit none
 
-	include '../shms/struct_shms.inc'
+	include 'hms/struct_hms.inc'
+	include 'shms/struct_shms.inc'
 	include 'spectrometers.inc'
 	include 'constants.inc'
 
-C HBOOK/NTUPLE common block and parameters.
-	integer*4	pawc_size
-	parameter	(pawc_size = 1000000)
-	common		/pawc/ hbdata(pawc_size)
-	integer*4	hbdata
-	character*8	hut_nt_names(20)/
-     >			'hsxfp', 'hsyfp', 'hsxpfp', 'hsypfp',
-     >			'hsztari','hsytari', 'hsdeltai', 'hsyptari', 'hsxptari',
-     >			'hsztar','hsytar', 'hsdelta', 'hsyptar', 'hsxptar', 
-     >                  'hsxtari','yrast','xsnum','ysnum','xsieve'
-     >                  ,'ysieve'/
-	real*4		hut(20)
+c Vector (real*4) for hut ntuples - needs to match dimension of variables
+	real*4		shms_hut(21)
+	real*4          shms_spec(58)
 
-	character*8	spec_nt_names(58)/
-     >			's_hb1_x', 's_hb1_y','s_hb2_x', 's_hb2_y','s_hb3_x', 's_hb3_y','s_hb4_x', 's_hb4_y', 's_q1_x', 's_q1_y', ! 10
-     >                  's_q2_x', 's_q2_y', 's_q3_x', 's_q3_y', !14
-     >                  's_d1_x', 's_d1_y', 's_d1f_x', 's_d1f_y', !18
-     >                  's_dme_x', 's_dme_y', 's_dm1_x', 's_dm1_y', !22
-     >                  'S_dm2_x', 's_dm2_y', 'S_dm3_x','s_dm3_y', !26
-     >                  'S_dm4_x', 's_dm4_y', 'S_dm5_x','s_dm5_y', !30
-     >                  'S_dm6_x', 's_dm6_y', 'S_dm7_x','s_dm7_y', !34
-     >                  'S_dmex_x', 's_dmex_y', 's_dex_x', 's_dex_y', !38
-     >                  's_dc1_x', 's_dc1_y', 's_dc2_x', 's_dc2_y', !42
-     >                  's_s1_x', 's_s1_y', 's_s2_x', 's_s2_y', !46
-     >                  's_cal_x', 's_cal_y', 's_fcal_x', 's_fcal_y',
-     >                  'sxfp', 'syfp', 
-     >                  'sdelta', 'sxptar', 'syptar', 'sxcoll', 
-     >                  'sycoll', 'sflag'/
-	real*4          spec(58)
+	real*4          hms_hut(15)
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
@@ -84,6 +61,7 @@ C Event limits, topdrawer limits, physics quantities
 	real*8 pathlen				!path length through spectrometer.
 	logical*4 ok_spec			!indicates whether event makes it in MC
 	integer*4 hit_calo                      !flag for hitting the calorimeter
+	integer*4 armSTOP_successes,armSTOP_trials
 
 C Initial and reconstructed track quantities.
 	real*8 dpp_init,dth_init,dph_init,xtar_init,ytar_init,ztar_init
@@ -94,14 +72,13 @@ C Initial and reconstructed track quantities.
 	real*8 resmult
 
 C Control flags (from input file)
+	integer*4 ispec
 	integer*4 p_flag			!particle identification
-	logical*4 use_aer                       !Aerogel usage flag
 	logical*4 ms_flag
 	logical*4 wcs_flag
-	logical*4 cer_flag
-	logical*4 vac_flag
+	logical*4 store_all
 
-	common /hutflag/ cer_flag,vac_flag
+c	common /hutflag/ cer_flag,vac_flag
 C Hardwired control flags.
 	logical*4 hut_ntuple	/.true./
         logical*4 spec_ntuple   /.false./
@@ -125,7 +102,7 @@ C Function definitions.
         integer      itime,ij
         character	timestring*30
 
-        character*80 rawname, filename
+        character*80 rawname, filename, hbook_filename
 	real*4  secnds,zero
 
 	parameter(zero=0.0)
@@ -140,6 +117,7 @@ C ================================ Executable Code =============================
 C Initialize
 C using SIMC unstructured version
 C
+C SHMS
 	shmsSTOP_trials	= 0
 	shmsSTOP_HB_in	= 0
         shmsSTOP_HB_men = 0
@@ -195,44 +173,44 @@ c	shmsSTOP_Q3_out6	= 0
 	shmsSTOP_cal	= 0
 	shmsSTOP_successes	= 0
 	stop_id = 0
+C HMS
+	hSTOP_trials	= 0
+	hSTOP_slit_hor	= 0
+	hSTOP_slit_vert	= 0
+	hSTOP_slit_oct	= 0
+	hSTOP_Q1_in	= 0
+	hSTOP_Q1_mid	= 0
+	hSTOP_Q1_out	= 0
+	hSTOP_Q2_in	= 0
+	hSTOP_Q2_mid	= 0
+	hSTOP_Q2_out	= 0
+	hSTOP_Q3_in	= 0
+	hSTOP_Q3_mid	= 0
+	hSTOP_Q3_out	= 0
+	hSTOP_D1_in	= 0
+	hSTOP_D1_out	= 0
+	hSTOP_hut	= 0
+	hSTOP_dc1	= 0
+	hSTOP_dc2	= 0
+	hSTOP_scin	= 0
+	hSTOP_cal	= 0
+	hSTOP_successes	= 0
 
 C Open setup file.
 
 	write(*,*)'Enter input filename (assumed to be in infiles dir)'
 	read(*,1968) rawname
  1968	format(a)
-	filename = 'infiles/'//rawname(1:last_char(rawname))//'.inp'
+	filename = '../infiles/'//rawname(1:last_char(rawname))//'.inp'
 	print *,filename,'opened'
 	open(unit=chanin,status='old',file=filename)
 
-C Initialize HBOOK/NTUPLE if used.
+C Define HBOOK/NTUPLE filename if used.
 	if (hut_ntuple) then
-	  call hlimit(pawc_size)
-	  filename = 'worksim/'//rawname(1:last_char(rawname))//'.rzdat'
-
-cmkj          iquest(10) = 256000
-cmkj	  iquest(10) = 510000
-! see for example
-!   http://wwwasd.web.cern.ch/wwwasd/cgi-bin/listpawfaqs.pl/7
-! the file size is limited to ~260M no matter how I change iquest !
-cmkj	  call hropen(30,'HUT',filename,'NQ',4096,i) !CERNLIB
-	  call hropen(30,'HUT',filename,'N',1024,i) !CERNLIB
- 
-	  if (i.ne.0) then
-! TH - use "write" instead of "type" for gfortran. Change this everywhere below
-!	    type *,'HROPEN error: istat = ',i
-	    write(*,*),'HROPEN error: istat = ',i
-	    stop
-	  endif
-
-	  call hbookn(1411,'HUT NTUPLE',20,'HUT',10000,hut_nt_names)
-          if (spec_ntuple) then
-           call hbookn(1412,'SPEC NTU',58,'HUT',10000,spec_nt_names)
-          endif
-	endif	   
-
+	  hbook_filename = '../worksim/'//rawname(1:last_char(rawname))//'.rzdat'
+	endif
 C Open Output file.
-	filename = 'outfiles/'//rawname(1:last_char(rawname))//'.out'
+	filename = '../outfiles/'//rawname(1:last_char(rawname))//'.out'
 	open (unit=chanout,status='unknown',file=filename)
 
 C Read in real*8's from setup file
@@ -251,13 +229,32 @@ C Strip off header
 	iss = rd_int(str_line,n_trials)
 	if (.not.iss) stop 'ERROR (ntrials) in setup!'
 
+! Spectrometer flag:
+	read (chanin,1001) str_line
+	write(*,*),str_line(1:last_char(str_line))
+	iss = rd_int(str_line,ispec)
+	if (.not.iss) stop 'ERROR (Spectrometer selection) in setup!'
+! Open HBOOK/NTUPLE file here
+	if(hut_ntuple) then
+	   if(ispec.eq.2) then
+	      call shms_hbook_init(hbook_filename,spec_ntuple)
+	   elseif(ispec.eq.1) then
+	      call hms_hbook_init(hbook_filename,spec_ntuple)
+	   else
+	      write(6,*) 'Uknown spectrometer, stopping.'
+	      stop
+	   endif
+	endif
+
 ! Spectrometer momentum:
 	read (chanin,1001) str_line
+	write(*,*),str_line(1:last_char(str_line))
 	iss = rd_real(str_line,p_spec)
 	if (.not.iss) stop 'ERROR (Spec momentum) in setup!'
 
 ! Spectrometer angle:
 	read (chanin,1001) str_line
+	write(*,*),str_line(1:last_char(str_line))
 	iss = rd_real(str_line,th_spec)
 	if (.not.iss) stop 'ERROR (Spec theta) in setup!'
 	th_spec = abs(th_spec) / degrad
@@ -368,12 +365,6 @@ C Strip off header
 	if (.not.rd_int(str_line,p_flag)) 
      > stop 'ERROR: p_flag in setup file!'
 
-! Read in flag for aerogel usage in the HMS.
-	read (chanin,1001) str_line
-	write(*,*),str_line(1:last_char(str_line))
-	if (.not.rd_int(str_line,tmp_int)) 
-     > stop 'ERROR: use_aer in setup file!'
-	if (tmp_int.eq.1) use_aer = .true.
 
 ! Read in flag for multiple scattering.
 	read (chanin,1001) str_line
@@ -389,19 +380,12 @@ C Strip off header
      > stop 'ERROR: wcs_flag in setup file!'
 	if (tmp_int.eq.1) wcs_flag = .true.
 
-! Read in flag for 1st cerenkov stack 
+! Read in flag to keep all events - success or not
 	read (chanin,1001) str_line
 	write(*,*),str_line(1:last_char(str_line))
 	if (.not.rd_int(str_line,tmp_int)) 
-     > stop 'ERROR: cer_flag in setup file!'
-	if (tmp_int.eq.1) cer_flag = .true.
-
-! Read in flag for vacuum pipe or helium bag 
-	read (chanin,1001) str_line
-	write(*,*),str_line(1:last_char(str_line))
-	if (.not.rd_int(str_line,tmp_int)) 
-     > stop 'ERROR: vac_flag in setup file!'
-	if (tmp_int.eq.1) vac_flag = .true.
+     > stop 'ERROR: store_all in setup file!'
+	if (tmp_int.eq.1) store_all = .true.
 
 
 C Set particle masses.
@@ -431,8 +415,13 @@ C------------------------------------------------------------------------------C
 c	  call srand(itime)
 
 	do Itrial = 1,n_trials
+	   if(ispec.eq.1) then
+	      armSTOP_successes=hSTOP_successes
+	   elseif(ispec.eq.2) then
+	      armSTOP_successes=shmsSTOP_successes
+	   endif
 	  if(mod(Itrial,5000).eq.0) write(*,*)'event #: ',
-     >Itrial,'       successes: ',shmsSTOP_successes
+     >Itrial,'       successes: ',armSTOP_successes
 
 
 	  irnd=Itrial
@@ -470,26 +459,31 @@ C dxdz and dydz in HMS TRANSPORT coordinates.
      &          /1000.   + gen_lim_down(3)/1000.
 
 
+	  if(ispec.eq.2) then ! SHMS
 C Transform from target to SHMS (TRANSPORT) coordinates.
 C Version for a spectrometer on the left-hand side: (i.e. SHMS)
-	  x_s    = -y
-	  y_s    = x * cos_ts - z * sin_ts
-	  z_s    = z * cos_ts + x * sin_ts
-
+	     x_s    = -y
+	     y_s    = x * cos_ts - z * sin_ts
+	     z_s    = z * cos_ts + x * sin_ts
+	  elseif(ispec.eq.1) then ! HMS
 C Below assumes that HMS is on the right-hand side of the beam
 C line (looking downstream).
-!	  xs    = -y
-!	  ys    = x * cos_ts + z * sin_ts
-!	  zs    = z * cos_ts - x * sin_ts
+	     x_s    = -y
+	     y_s    = x * cos_ts + z * sin_ts
+	     z_s    = z * cos_ts - x * sin_ts
+	  else
+	     write(6,*) 'unknown spectrometer: stopping'
+	     stop
+	  endif
 
 C DJG Apply spectrometer offsets
 C DJG If the spectrometer if too low (positive x offset) a particle
 C DJG at "x=0" will appear in the spectrometer to be a little high
 C DJG so we should subtract the offset
 
-	  xs = xs - spec_xoff
-	  ys = ys - spec_yoff
-	  zs = zs - spec_zoff
+	  x_s = x_s - spec_xoff
+	  y_s = y_s - spec_yoff
+	  z_s = z_s - spec_zoff
 
 	  dpp_s  = dpp
 	  dxdz_s = dxdz
@@ -513,7 +507,11 @@ C Save init values for later.
 	  dph_init = dxdz_s*1000.		!mr
 
 C Calculate multiple scattering length of target
-	  cos_ev = (cos_ts+dydz_s*sin_ts)/sqrt(1+dydz_s**2+dxdz_s**2)
+	  if(ispec.eq.1) then ! spectrometer on right
+	     cos_ev = (cos_ts+dydz_s*sin_ts)/sqrt(1+dydz_s**2+dxdz_s**2)
+	  elseif(ispec.eq.2) then ! spectrometer on left
+	     cos_ev = (cos_ts-dydz_s*sin_ts)/sqrt(1+dydz_s**2+dxdz_s**2)
+	  endif
 	  th_ev = acos(cos_ev)
 	  sin_ev = sin(th_ev)
 
@@ -528,7 +526,7 @@ cXZ	     musc_targ_len = musc_targ_len +(gen_lim(6)/2. + z)    ! before scatteri
 cXZ	     musc_targ_len = musc_targ_len + 0.0127/8.89         ! entrance window
 cXZ	     musc_targ_len = musc_targ_len 
 cXZ     >	     + 0.0138*(2./(2.**2.-(z*sin_ev)**2.)**0.5)/8.89 ! downstream window
-C Case 1 : cryo target (2.65 inches diamater --> 3.37 cm radius)
+C Case 1 : cryo target (2.65 inches diameter --> 3.37 cm radius)
 C   Liquid + 5 mil Al (X0=8.89cm) beer can
 C DG - put back beer can stuff...
 ! TH - hardcoded values may cause trouble in gfortran
@@ -552,13 +550,27 @@ C Solid target
 	  endif
 
 C Scattering before magnets:  Approximate all scattering as occuring AT TARGET.
-C  16 mil Al scattering chamber window (X0=8.89cm)
-C  15 cm air (X0=30420cm)
+C SHMS
+C  20 mil Al scattering chamber window (X0=8.89cm)
+C  57.27 cm air (X0=30420cm)
 C spectrometer entrance window
-C  20 mil Al s (X0=8.89cm)
+C  10 mil Al s (X0=8.89cm)
 
-	  musc_targ_len = musc_targ_len + .016*2.54/8.89 +
-     >          15./30420. +  .020*2.54/8.89
+C  HMS
+C  20 mil Al scattering chamber window (X0=8.89cm)
+C  24.61 cm air (X0=30420cm)
+C spectrometer entrance window
+C  15 mil Kevlar (X0=74.6 cm)
+C   5 mil Mylar (X0=28.7 cm)
+
+	  if(ispec.eq.2) then
+	     musc_targ_len = musc_targ_len + .020*2.54/8.89 +
+     >          57.27/30420. +  .010*2.54/8.89
+	  elseif(ispec.eq.1) then
+	     musc_targ_len = musc_targ_len + .020*2.54/8.89 +
+     >          24.61/30420. +  .015*2.54/74.6 + .005*2.54/28.7
+	  endif
+
 c
 	  if (ms_flag ) call musc(m2,p_spec*(1.+dpp_s/100.),
      > musc_targ_len,dydz_s,dxdz_s)
@@ -566,7 +578,7 @@ c
 !-----------------------------------------------------------------------------
 ! TH - START TARGET APERTURE TESTS
 ! ----------------------------------------------------------------------------
-
+! This is for SHMS only
 ! Restore xs to values at pivot. 
 !	   xs = x_transp
 !	   ys = y_transp
@@ -585,17 +597,29 @@ c
 	  dif_a = (th_spec*1000+dth_init-dydz_aa*1000)  ! mrad
 
 ! ----------------------------------------------------------------------------
-	  call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z, 
+	  if(ispec.eq.2) then
+
+	     call mc_shms(p_spec, th_spec, dpp_s, x_s, y_s, z_s, 
      >          dxdz_s, dydz_s,
-     >		x_fp, dx_fp, y_fp, dy_fp, m2, spec,
+     >		x_fp, dx_fp, y_fp, dy_fp, m2, shms_spec,
      >		ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
-     >          pathlen, 5,
-     >          .false.)
-          if (spec_ntuple) then
-	     spec(58) = stop_id
+     >          pathlen, 5)
+
+	     if (spec_ntuple) then
+		shms_spec(58) = stop_id
 c            if (ok_spec) spec(58) =1.
-            call hfn(1412,spec)
-          endif
+		call hfn(1412,shms_spec)
+	     endif
+	  elseif(ispec.eq.1) then
+	     call mc_hms(p_spec, th_spec, dpp_s, x_s, y_s, z_s, 
+     >          dxdz_s, dydz_s,
+     >          x_fp, dx_fp, y_fp, dy_fp, m2,
+     >          ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
+     >          pathlen)
+	  else
+	     write(6,*) 'Unknown spectrometer! Stopping..'
+	     stop
+	  endif
 
 	  if (ok_spec) then !Success, increment arrays
 	    dpp_recon = dpp_s
@@ -603,40 +627,6 @@ c            if (ok_spec) spec(58) =1.
 	    dph_recon = dxdz_s*1000.			!mr
 	    ztar_recon = + y_s / sin_ts 
             ytar_recon = y_s
-
-
-C Output NTUPLE entry.
-
-	    if (hut_ntuple) then
-	      hut(1) = x_fp
-	      hut(2) = y_fp
-	      hut(3) = dx_fp
-	      hut(4) = dy_fp
-	      hut(5) = ztar_init
-	      hut(6) = ytar_init
-	      hut(7) = dpp_init
-	      hut(8) = dth_init/1000.
-	      hut(9) = dph_init/1000.
-	      hut(10) = ztar_recon
-	      hut(11) = ytar_recon
-	      hut(12)= dpp_recon
-	      hut(13)= dth_recon/1000.
-	      hut(14)= dph_recon/1000.
-	      hut(15)= xtar_init
-	      hut(16)= y
-	      hut(17)= xs_num
-	      hut(18)= ys_num
-	      hut(19)= xc_sieve
-	      hut(20)= yc_sieve
-              if (use_front_sieve) then
-	      hut(17)= xsfr_num
-	      hut(18)= ysfr_num
-	      hut(19)= xc_frsieve
-	      hut(20)= yc_frsieve
-              endif
-	      call hfn(1411,hut)
-	    endif
-
 
 C Compute sums for calculating reconstruction variances.
 	    dpp_var(1) = dpp_var(1) + (dpp_recon - dpp_init)
@@ -648,7 +638,69 @@ C Compute sums for calculating reconstruction variances.
 	    dth_var(2) = dth_var(2) + (dth_recon - dth_init)**2
 	    dph_var(2) = dph_var(2) + (dph_recon - dph_init)**2
 	    ztg_var(2) = ztg_var(2) + (ztar_recon - ztar_init)**2
-	  endif			!Incremented the arrays
+	 endif			!Incremented the arrays
+
+
+C Output NTUPLE entry.
+C This is ugly, but want the option to have different outputs
+C for spectrometer ntuples
+	 if(ispec.eq.2) then
+	    if (store_all.OR.(hut_ntuple.AND.ok_spec)) then
+	       shms_hut(1) = x_fp
+	       shms_hut(2) = y_fp
+	       shms_hut(3) = dx_fp
+	       shms_hut(4) = dy_fp
+	       shms_hut(5) = ztar_init
+	       shms_hut(6) = ytar_init
+	       shms_hut(7) = dpp_init
+	       shms_hut(8) = dth_init/1000.
+	       shms_hut(9) = dph_init/1000.
+	       shms_hut(10) = ztar_recon
+	       shms_hut(11) = ytar_recon
+	       shms_hut(12)= dpp_recon
+	       shms_hut(13)= dth_recon/1000.
+	       shms_hut(14)= dph_recon/1000.
+	       shms_hut(15)= xtar_init
+	       shms_hut(16)= fry
+	       shms_hut(17)= xs_num
+	       shms_hut(18)= ys_num
+	       shms_hut(19)= xc_sieve
+	       shms_hut(20)= yc_sieve
+	       shms_hut(21)= stop_id
+	       if (use_front_sieve) then
+		  shms_hut(17)= xsfr_num
+		  shms_hut(18)= ysfr_num
+		  shms_hut(19)= xc_frsieve
+		  shms_hut(20)= yc_frsieve
+	       endif
+	       call hfn(1411,shms_hut)
+	    endif
+	 endif
+
+	 if(ispec.eq.1) then
+	    if (store_all.OR.(hut_ntuple.AND.ok_spec)) then
+	       hms_hut(1) = x_fp
+	       hms_hut(2) = y_fp
+	       hms_hut(3) = dx_fp
+	       hms_hut(4) = dy_fp
+	       hms_hut(5) = ytar_init
+	       hms_hut(6) = dpp_init
+	       hms_hut(7) = dth_init/1000.
+	       hms_hut(8) = dph_init/1000.
+	       hms_hut(9) = ytar_recon
+	       hms_hut(10)= dpp_recon
+	       hms_hut(11)= dth_recon/1000.
+	       hms_hut(12)= dph_recon/1000.
+	       hms_hut(13) = fry
+	       hms_hut(14)= ztar_init 
+	       if(ok_spec) then
+		  hms_hut(15)= 0
+	       else
+		  hms_hut(15)=99
+	       endif
+	       call hfn(1,hms_hut)
+	    endif
+	 endif
 
 C We are done with this event, whether GOOD or BAD.
 C Loop for remainder of trials.
@@ -663,9 +715,14 @@ C------------------------------------------------------------------------------C
 
 C Close NTUPLE file.
 
-	call hrout(1411,i,' ')
-        if (spec_ntuple) call hrout(1412,i,' ')
-	call hrend('HUT')
+	if(ispec.eq.2) then
+	   call hrout(1411,i,' ')
+	   if (spec_ntuple) call hrout(1412,i,' ')
+	   call hrend('HUT')
+	elseif(ispec.eq.1) then
+	   call hrout(1,i,' ')
+	   call hrend('HUT')
+	endif
 
 	write (chanout,1002)
 	write (chanout,1003) p_spec,th_spec*degrad
@@ -673,52 +730,74 @@ C Close NTUPLE file.
 
 	write (chanout,1005) n_trials
 
+	if(ispec.eq.1) then
+	   armSTOP_successes=hSTOP_successes
+	   armSTOP_trials=hSTOP_trials
+	elseif(ispec.eq.2) then
+	   armSTOP_successes=shmsSTOP_successes
+	   armSTOP_trials=shmsSTOP_trials
+	endif
+
 C Indicate where particles are lost in spectrometer.
+	if(ispec.eq.2) then
+	   write (chanout,1015)
+     >	   shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct,
+     >	   shmsSTOP_slit_hor,shmsSTOP_slit_vert,shmsSTOP_slit_oct,
+     >	   shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex,
+     >     shmsSTOP_HB_out,shmsSTOP_Q1_in,shmsSTOP_Q1_men,
+     >     shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out,
+     >	   shmsSTOP_Q2_in,shmsSTOP_Q2_men,shmsSTOP_Q2_mid,
+     >     shmsSTOP_Q2_mex,shmsSTOP_Q2_out,
+     >     shmsSTOP_Q3_in,shmsSTOP_Q3_men,shmsSTOP_Q3_mid,
+     >     shmsSTOP_Q3_mex,shmsSTOP_Q3_out,
+     >	   shmsSTOP_D1_in,shmsSTOP_D1_flr,shmsSTOP_D1_men,
+     >     shmsSTOP_D1_mid1,shmsSTOP_D1_mid2,shmsSTOP_D1_mid3,
+     >     shmsSTOP_D1_mid4,shmsSTOP_D1_mid5,shmsSTOP_D1_mid6,
+     >     shmsSTOP_D1_mid7,shmsSTOP_D1_mex,shmsSTOP_D1_out,
+     >     shmsSTOP_BP_in, shmsSTOP_BP_out
 
-	write (chanout,1015)
-     >	shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct,
-     >	shmsSTOP_slit_hor,shmsSTOP_slit_vert,shmsSTOP_slit_oct,
-     >	shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex,
-     >  shmsSTOP_HB_out,shmsSTOP_Q1_in,shmsSTOP_Q1_men,
-     >  shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out,
-     >	shmsSTOP_Q2_in,shmsSTOP_Q2_men,shmsSTOP_Q2_mid,
-     >  shmsSTOP_Q2_mex,shmsSTOP_Q2_out,
-     >  shmsSTOP_Q3_in,shmsSTOP_Q3_men,shmsSTOP_Q3_mid,
-     >  shmsSTOP_Q3_mex,shmsSTOP_Q3_out,
-     >	shmsSTOP_D1_in,shmsSTOP_D1_flr,shmsSTOP_D1_men,
-     >  shmsSTOP_D1_mid1,shmsSTOP_D1_mid2,shmsSTOP_D1_mid3,
-     >  shmsSTOP_D1_mid4,shmsSTOP_D1_mid5,shmsSTOP_D1_mid6,
-     >  shmsSTOP_D1_mid7,shmsSTOP_D1_mex,shmsSTOP_D1_out,
-     >  shmsSTOP_BP_in, shmsSTOP_BP_out
+	   write (chanout,1006)
+     >	   shmsSTOP_trials,shmsSTOP_hut,shmsSTOP_dc1,shmsSTOP_dc2,
+     >     shmsSTOP_s1,shmsSTOP_s2,shmsSTOP_s3,shmsSTOP_cal,
+     >     shmsSTOP_successes,shmsSTOP_successes
 
-	write (chanout,1006)
-     >	shmsSTOP_trials,shmsSTOP_hut,shmsSTOP_dc1,shmsSTOP_dc2,
-     >  shmsSTOP_s1,shmsSTOP_s2,shmsSTOP_s3,shmsSTOP_cal,
-     >  shmsSTOP_successes,shmsSTOP_successes
+	elseif(ispec.eq.1) then
+	   write (chanout,1016)
+     >	   hSTOP_slit_hor,hSTOP_slit_vert,hSTOP_slit_oct,
+     >	   hSTOP_Q1_in,hSTOP_Q1_mid,hSTOP_Q1_out,
+     >	   hSTOP_Q2_in,hSTOP_Q2_mid,hSTOP_Q2_out,
+     >	   hSTOP_Q3_in,hSTOP_Q3_mid,hSTOP_Q3_out,
+     >	   hSTOP_D1_in,hSTOP_D1_out
+
+	   write (chanout,1007)
+     >	   hSTOP_trials,hSTOP_hut,hSTOP_dc1,hSTOP_dc2,hSTOP_scin,hSTOP_cal,
+     >     hSTOP_successes,hSTOP_successes
+	endif
+
 
 C Compute reconstruction resolutions.
 
-	if (shmsSTOP_successes.eq.0) shmsSTOP_successes=1
-	t1 = sqrt(max(0.,dpp_var(2)/shmsSTOP_successes 
-     > - (dpp_var(1)/shmsSTOP_successes)**2))
-	t2 = sqrt(max(0.,dth_var(2)/shmsSTOP_successes 
-     > - (dth_var(1)/shmsSTOP_successes)**2))
-	t3 = sqrt(max(0.,dph_var(2)/shmsSTOP_successes 
-     > - (dph_var(1)/shmsSTOP_successes)**2))
-	t4 = sqrt(max(0.,ztg_var(2)/shmsSTOP_successes 
-     > - (ztg_var(1)/shmsSTOP_successes)**2))
+	if (armSTOP_successes.eq.0) armSTOP_successes=1
+	t1 = sqrt(max(0.,dpp_var(2)/armSTOP_successes 
+     > - (dpp_var(1)/armSTOP_successes)**2))
+	t2 = sqrt(max(0.,dth_var(2)/armSTOP_successes 
+     > - (dth_var(1)/armSTOP_successes)**2))
+	t3 = sqrt(max(0.,dph_var(2)/armSTOP_successes 
+     > - (dph_var(1)/armSTOP_successes)**2))
+	t4 = sqrt(max(0.,ztg_var(2)/armSTOP_successes 
+     > - (ztg_var(1)/armSTOP_successes)**2))
 
-	write (chanout,1011) dpp_var(1)/shmsSTOP_successes,t1,
-     > dth_var(1)/shmsSTOP_successes,
-     >		t2,dph_var(1)/shmsSTOP_successes,t3,
-     > ztg_var(1)/shmsSTOP_successes,t4
+	write (chanout,1011) dpp_var(1)/armSTOP_successes,t1,
+     > dth_var(1)/armSTOP_successes,
+     >		t2,dph_var(1)/armSTOP_successes,t3,
+     > ztg_var(1)/armSTOP_successes,t4
 
-	write(6,*) shmsSTOP_trials,' Trials',shmsSTOP_successes
+	write(6,*) armSTOP_trials,' Trials',armSTOP_successes
      > ,' Successes'
-	write (6,1011) dpp_var(1)/shmsSTOP_successes,t1,
-     > dth_var(1)/shmsSTOP_successes,
-     >		t2,dph_var(1)/shmsSTOP_successes,t3,
-     > ztg_var(1)/shmsSTOP_successes,t4
+	write (6,1011) dpp_var(1)/armSTOP_successes,t1,
+     > dth_var(1)/armSTOP_successes,
+     >		t2,dph_var(1)/armSTOP_successes,t3,
+     > ztg_var(1)/armSTOP_successes,t4
 
 C ALL done!
 
@@ -733,12 +812,12 @@ C =============================== Format Statements ============================
      >g11.5,' =  TH spect (deg)')
 
 1004	format('!',/'! Monte-Carlo limits:',/,'!',/,
-     >	g11.5,'= GEN_LIM(1) - DP/P   (half width,% )',/,
-     >	g11.5,'= GEN_LIM(2) - Theta  (half width,mr)',/,
-     >	g11.5,'= GEN_LIM(3) - Phi    (half width,mr)',/,
-     >	g11.5,'= GEN_LIM(4) - HORIZ (full width of 3 sigma cutoff,cm)',/,
-     >	g11.5,'= GEN_LIM(5) - VERT  (full width of 3 sigma cutoff,cm)',/,
-     >	g11.5,'= GEN_LIM(6) - Z      (Full width,cm)')
+     >  g11.5,'= GEN_LIM(1) - DP/P   (half width,% )',/,
+     >  g11.5,'= GEN_LIM(2) - Theta  (half width,mr)',/,
+     >  g11.5,'= GEN_LIM(3) - Phi    (half width,mr)',/,
+     >  g11.5,'= GEN_LIM(4) - HORIZ (full width of 3 sigma cutoff,cm)',/,
+     >  g11.5,'= GEN_LIM(5) - VERT  (full width of 3 sigma cutoff,cm)',/,
+     >  g11.5,'= GEN_LIM(6) - Z      (Full width,cm)')
 
 !inp     >	,/,
 !inp     >	g18.8,' =  Hor. 1/2 gap size (cm)',/,
@@ -746,79 +825,107 @@ C =============================== Format Statements ============================
 
 1005	format('!',/,'! Summary:',/,'!',/,
 !     >	i,' Monte-Carlo trials:')
-     >	i11,' Monte-Carlo trials:')
+     >  i11,' Monte-Carlo trials:')
 
 1006	format(i11,' Initial Trials',/
-     >	i11,' Trials made it to the hut',/
-     >	i11,' Trial cut in dc1',/
-     >	i11,' Trial cut in dc2',/
-     >	i11,' Trial cut in s1',/
-     >	i11,' Trial cut in s2',/
-     >	i11,' Trial cut in s3',/
-     >	i11,' Trial cut in cal',/
-     >	i11,' Trials made it thru the detectors and were reconstructed',/
-     >	i11,' Trials passed all cuts and were histogrammed.',/
-     >	)
+     >  i11,' Trials made it to the hut',/
+     >  i11,' Trial cut in dc1',/
+     >  i11,' Trial cut in dc2',/
+     >  i11,' Trial cut in s1',/
+     >  i11,' Trial cut in s2',/
+     >  i11,' Trial cut in s3',/
+     >  i11,' Trial cut in cal',/
+     >  i11,' Trials made it thru the detectors and were reconstructed',/
+     >  i11,' Trials passed all cuts and were histogrammed.',/
+     >  )
+
+ 1007	format(i11,' Initial Trials',/
+     >  i11,' Trials made it to the hut',/
+     >  i11,' Trial cut in dc1',/
+     >  i11,' Trial cut in dc2',/
+     >  i11,' Trial cut in scin',/
+     >  i11,' Trial cut in cal',/
+     >  i11,' Trials made it thru the detectors and were reconstructed',/
+     >  i11,' Trials passed all cuts and were histogrammed.',/
+     >  )
+
 
 !1008	format(8i)
 !1009	format(1x,i4,g,i)
 !1010	format(a,i)
 1011	format(
-     >	'DPP ave error, resolution = ',2g18.8,' %',/,
-     >	'DTH ave error, resolution = ',2g18.8,' mr',/,
-     >	'DPH ave error, resolution = ',2g18.8,' mr',/,
-     >	'ZTG ave error, resolution = ',2g18.8,' cm')
+     >  'DPP ave error, resolution = ',2g18.8,' %',/,
+     >  'DTH ave error, resolution = ',2g18.8,' mr',/,
+     >  'DPH ave error, resolution = ',2g18.8,' mr',/,
+     >  'ZTG ave error, resolution = ',2g18.8,' cm')
 
 1012	format(1x,16i4)
 
 1015	format(/,
-     >	i11,' stopped in the TARG APERT HOR',/
-     >	i11,' stopped in the TARG APERT VERT',/
-     >	i11,' stopped in the TARG APERT OCTAGON',/
-     >	i11,' stopped in the FIXED SLIT HOR',/
-     >	i11,' stopped in the FIXED SLIT VERT',/
+     >  i11,' stopped in the TARG APERT HOR',/
+     >  i11,' stopped in the TARG APERT VERT',/
+     >  i11,' stopped in the TARG APERT OCTAGON',/
+     >  i11,' stopped in the FIXED SLIT HOR',/
+     >  i11,' stopped in the FIXED SLIT VERT',/
      >  i11,' stopped in the FIXED SLIT OCTAGON',/
-     >	i11,' stopped in HB ENTRANCE',/
-     >	i11,' stopped in HB MAG ENTRANCE',/
-     >	i11,' stopped in HB MAG EXIT',/
-     >	i11,' stopped in HB EXIT',/
-     >	i11,' stopped in Q1 ENTRANCE',/
-     >	i11,' stopped in Q1 MAG ENTRANCE',/
-     >	i11,' stopped in Q1 MIDPLANE',/
-     >	i11,' stopped in Q1 MAG EXIT',/
-     >	i11,' stopped in Q1 EXIT',/
-     >	i11,' stopped in Q2 ENTRANCE',/
-     >	i11,' stopped in Q2 MAG ENTRANCE',/
-     >	i11,' stopped in Q2 MIDPLANE',/
-     >	i11,' stopped in Q2 MAG EXIT',/
-     >	i11,' stopped in Q2 EXIT',/
-     >	i11,' stopped in Q3 ENTRANCE',/
-     >	i11,' stopped in Q3 MAG ENTRANCE',/
-     >	i11,' stopped in Q3 MIDPLANE',/
-     >	i11,' stopped in Q3 MAG EXIT',/
-     >	i11,' stopped in Q3 EXIT',/
-     >	i11,' stopped in D1 ENTRANCE',/
+     >  i11,' stopped in HB ENTRANCE',/
+     >  i11,' stopped in HB MAG ENTRANCE',/
+     >  i11,' stopped in HB MAG EXIT',/
+     >  i11,' stopped in HB EXIT',/
+     >  i11,' stopped in Q1 ENTRANCE',/
+     >  i11,' stopped in Q1 MAG ENTRANCE',/
+     >  i11,' stopped in Q1 MIDPLANE',/
+     >  i11,' stopped in Q1 MAG EXIT',/
+     >  i11,' stopped in Q1 EXIT',/
+     >  i11,' stopped in Q2 ENTRANCE',/
+     >  i11,' stopped in Q2 MAG ENTRANCE',/
+     >  i11,' stopped in Q2 MIDPLANE',/
+     >  i11,' stopped in Q2 MAG EXIT',/
+     >  i11,' stopped in Q2 EXIT',/
+     >  i11,' stopped in Q3 ENTRANCE',/
+     >  i11,' stopped in Q3 MAG ENTRANCE',/
+     >  i11,' stopped in Q3 MIDPLANE',/
+     >  i11,' stopped in Q3 MAG EXIT',/
+     >  i11,' stopped in Q3 EXIT',/
+     >  i11,' stopped in D1 ENTRANCE',/
      >  i11,' stopped in D1 FLARE',/
-     >	i11,' stopped in D1 MAG ENTRANCE',/
-     >	i11,' stopped in D1 MID-1',/
-     >	i11,' stopped in D1 MID-2',/
-     >	i11,' stopped in D1 MID-3',/
-     >	i11,' stopped in D1 MID-4',/
-     >	i11,' stopped in D1 MID-5',/
-     >	i11,' stopped in D1 MID-6',/
-     >	i11,' stopped in D1 MID-7',/
-     >	i11,' stopped in D1 MAG EXIT',/
-     >	i11,' stopped in D1 EXIT',/
-     >	i11,' stopped in BP ENTRANCE',/
-     >	i11,' stopped in BP EXIT',/
-     >	)
+     >  i11,' stopped in D1 MAG ENTRANCE',/
+     >  i11,' stopped in D1 MID-1',/
+     >  i11,' stopped in D1 MID-2',/
+     >  i11,' stopped in D1 MID-3',/
+     >  i11,' stopped in D1 MID-4',/
+     >  i11,' stopped in D1 MID-5',/
+     >  i11,' stopped in D1 MID-6',/
+     >  i11,' stopped in D1 MID-7',/
+     >  i11,' stopped in D1 MAG EXIT',/
+     >  i11,' stopped in D1 EXIT',/
+     >  i11,' stopped in BP ENTRANCE',/
+     >  i11,' stopped in BP EXIT',/
+     >  )
+
+ 1016	format(/,
+     >  i11,' stopped in the FIXED SLIT HOR',/
+     >  i11,' stopped in the FIXED SLIT VERT',/
+     >  i11,' stopped in the FIXED SLIT OCTAGON',/
+     >  i11,' stopped in Q1 ENTRANCE',/
+     >  i11,' stopped in Q1 MIDPLANE',/
+     >  i11,' stopped in Q1 EXIT',/
+     >  i11,' stopped in Q2 ENTRANCE',/
+     >  i11,' stopped in Q2 MIDPLANE',/
+     >  i11,' stopped in Q2 EXIT',/
+     >  i11,' stopped in Q3 ENTRANCE',/
+     >  i11,' stopped in Q3 MIDPLANE',/
+     >  i11,' stopped in Q3 EXIT',/
+     >  i11,' stopped in D1 ENTRANCE',/
+     >  i11,' stopped in D1 EXIT',/
+     >  )
 
 1100	format('!',79('-'),/,'! ',a,/,'!')
 1200	format(/,'! ',a,' Coefficients',/,/,
-     >	(5(g18.8,','))
-     >	)
+     >  (5(g18.8,','))
+     >  )
 1300	format(/,'! ',a,' Coefficient uncertainties',/,/,
-     >	(5(g18.8,','))
-     >	)
+     >  (5(g18.8,','))
+     >  )
 
 	end
