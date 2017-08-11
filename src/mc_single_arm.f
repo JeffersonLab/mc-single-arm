@@ -515,39 +515,19 @@ C Calculate multiple scattering length of target
 	  th_ev = acos(cos_ev)
 	  sin_ev = sin(th_ev)
 
-C Case 1 : extended target:
-C   cryo LH2 (4.0 cm diamater = 2.0 radius)
-C   Liquid + 2 x 0.13mm Al (X0=8.89cm) tuna can
-C
-cXZ	  if (abs(gen_lim(6)).gt.3.) then   
-cXZ	     musc_targ_len = (2.**2.-(z*sin_ev)**2.)**0.5-z*cos_ev ! after scattering
-cXZ                                                                   ! forward or backward
-cXZ	     musc_targ_len = musc_targ_len +(gen_lim(6)/2. + z)    ! before scattering
-cXZ	     musc_targ_len = musc_targ_len + 0.0127/8.89         ! entrance window
-cXZ	     musc_targ_len = musc_targ_len 
-cXZ     >	     + 0.0138*(2./(2.**2.-(z*sin_ev)**2.)**0.5)/8.89 ! downstream window
-C Case 1 : cryo target (2.65 inches diameter --> 3.37 cm radius)
-C   Liquid + 5 mil Al (X0=8.89cm) beer can
-C DG - put back beer can stuff...
-! TH - hardcoded values may cause trouble in gfortran
-	  if (abs(gen_lim(6)).gt.3.) then
-	     if (((gen_lim(6)/2. - z)/cos_ev .lt. 3.37/sin_ev).
-     &           and.((gen_lim(6)/2. + z)/cos_ev .gt. 3.37/sin_ev)) then !forward or backward...
-*		write(*,*)'forward/backward'
-		musc_targ_len = abs(gen_lim(6)/2. - z)/rad_len_cm/cos_ev
-
-c                write(6,*) "1:  ",musc_targ_len*rad_len_cm
-
-		musc_targ_len = musc_targ_len + .005*2.54/8.89/cos_ev
-  	    else						     !side
-*	       write(*,*)'side'
-	       musc_targ_len = 3.37/rad_len_cm/sin_ev
-	       musc_targ_len = musc_targ_len + .005*2.54/8.89/sin_ev
-	    endif
-C Solid target
-	  else
-	     musc_targ_len = abs(gen_lim(6)/2. - z)/rad_len_cm/cos_ev
-	  endif
+C Case 1 : extended cryo target:
+C Choices: 
+C 1. cryocylinder: Basic cylinder(2.65 inches diameter --> 3.37 cm radius) w/flat exit window (5 mil Al)
+C 2. cryotarg2017: Cylinder (1.32 inches radisu)  with curved exit window (same radius) 5 mil sides/exit
+C 3. Tuna can: shaped like a tuna can - 4 cm diameter (usually)  - 5 mil window. 
+	  if (abs(gen_lim(6)).gt.3.) then ! anything longer than 3 cm assumed to be cryotarget
+c	    call cryotuna(z,th_ev,rad_len_cm,gen_lim(6),musc_targ_len)
+c	    call cryocylinder(z,th_ev,rad_len_cm,gen_lim(6),musc_targ_len)
+	     call cryotarg2017(z,th_ev,rad_len_cm,gen_lim(6),musc_targ_len)
+C Simple solid target
+	 else
+	    musc_targ_len = abs(gen_lim(6)/2. - z)/rad_len_cm/cos_ev
+	 endif
 
 C Scattering before magnets:  Approximate all scattering as occuring AT TARGET.
 C SHMS
