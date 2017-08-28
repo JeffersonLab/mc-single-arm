@@ -1,0 +1,7 @@
+*.o
+src/mc_single_arm
+#*
+*~
+*#
+
+
