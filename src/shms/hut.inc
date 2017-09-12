@@ -120,8 +120,8 @@ C Wire chamber resolutions (sigma)
 c SHMS chambers assume sigma=200um per plane
 c   planes will be two sets of 2u,2v,2x but need to mock it by 2 sets of 4x,2y
 c      planes 2 and 5 in group of 6 are y planes
-	real*8 hdc_sigma(1:12)/	0.020,0.020,0.020,0.020,0.020,0.020,
-     >				0.020,0.020,0.020,0.020,0.020,0.020/
+	real*8 hdc_sigma(1:12)/	0.040,0.040,0.040,0.040,0.040,0.040,
+     >				0.040,0.040,0.040,0.040,0.040,0.040/
 
 C Wire plane positions, construct hdc_zpos array using these parameters
 
@@ -168,24 +168,24 @@ C Scintillator positions and thicknesses
 	real*8 hscin_2x_left,hscin_2x_right,hscin_2x_offset
 	real*8 hscin_2y_top,hscin_2y_bot,hscin_2y_offset
 
-	parameter (hscin_1x_zpos = 51.9)
-	parameter (hscin_1y_zpos = 60.9)
-	parameter (hscin_2x_zpos = 271.9)
-	parameter (hscin_2y_zpos = 280.9)
+	parameter (hscin_1x_zpos = 56.9-4.8)
+	parameter (hscin_1y_zpos = 56.9+4.8)
+	parameter (hscin_2x_zpos = 267.7+3.7)
+	parameter (hscin_2y_zpos = 267.7+14.7)
 	parameter (hscin_1x_thick = 1.000*1.067)
 	parameter (hscin_1y_thick = 1.000*1.067)
 	parameter (hscin_2x_thick = 1.000*1.067)
 	parameter (hscin_2y_thick = 1.000*1.067)
-	parameter (hscin_1x_left  =  45.)
-	parameter (hscin_1x_right = -45.)
+	parameter (hscin_1x_left  =  50.)
+	parameter (hscin_1x_right = -50.)
 	parameter (hscin_1x_offset = 0.0)
-	parameter (hscin_1y_top   = -40.)
-	parameter (hscin_1y_bot   =  50.)
+	parameter (hscin_1y_top   = -45.)
+	parameter (hscin_1y_bot   =  45.)
 	parameter (hscin_1y_offset = 0.0)
 	parameter (hscin_2x_left  =   55.)
 	parameter (hscin_2x_right =  -55.)
 	parameter (hscin_2x_offset =  0.)
-	parameter (hscin_2y_top   = -52.5)
+	parameter (hscin_2y_top   = -62.5)
 	parameter (hscin_2y_bot   =  62.5)
 	parameter (hscin_2y_offset = 0)
 
