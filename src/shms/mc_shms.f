@@ -55,7 +55,7 @@ C Math constants
 ! should still be pretty good for optics. Physics limits (e.g. elastic
 ! peak at x<=1) will not be preserved.
 
-	logical use_sieve /.false./ 
+	logical use_front_sieve /.false./ 
 c 	logical use_sieve /.true./ 
 c        logical use_coll /.false./ ! use collimator
         logical use_coll /.true./ ! use collimator
@@ -67,10 +67,10 @@ c        logical use_coll /.false./ ! use collimator
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
-        logical use_front_sieve
+        logical use_sieve
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
-     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_front_sieve
+     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
 C The arguments
 
 	real*8	x,y,z				!(cm)
