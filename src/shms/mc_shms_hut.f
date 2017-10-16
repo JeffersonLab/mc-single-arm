@@ -25,7 +25,7 @@ C Math constants
 	logical*4 cer_flag
 	logical*4 vac_flag
         parameter (cer_flag = .false.) ! TRUE means 1st Cerenkov (Ar/Ne) is in front of chambers
-        parameter (vac_flag = .false.) ! FALSE means helium bag replaces 1st Cerenkov (Ar/Ne) 
+        parameter (vac_flag = .true.) ! FALSE means helium bag replaces 1st Cerenkov (Ar/Ne) 
 
 c	common /hutflag/ cer_flag,vac_flag
 
