@@ -22,7 +22,7 @@ c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
         logical use_front_sieve /.false./
-        logical use_sieve /.true./ 
+        logical use_sieve /.false./ 
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
      > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
