@@ -22,9 +22,10 @@ c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
         logical use_front_sieve /.false./
+        logical use_sieve /.true./ 
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
-     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_front_sieve
+     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
 
 
 C Local declarations.
@@ -44,6 +45,7 @@ C Event limits, topdrawer limits, physics quantities
 	real*8 gen_lim(8)			!M.C. phase space limits.
 	real*8 gen_lim_up(3)
 	real*8 gen_lim_down(3)
+        real *8 gen_mom                         !local variable for track momentum in elastic event
 
 	real*8 cut_dpp,cut_dth,cut_dph,cut_z	!cuts on reconstructed quantities
 	real*8 xoff,yoff,zoff                   !Beam offsets
@@ -62,6 +64,7 @@ C Event limits, topdrawer limits, physics quantities
 	logical*4 ok_spec			!indicates whether event makes it in MC
 	integer*4 hit_calo                      !flag for hitting the calorimeter
 	integer*4 armSTOP_successes,armSTOP_trials
+        real *8 beam_energy, el_energy, theta_sc, tar_mass !elastic calibration
 
 C Initial and reconstructed track quantities.
 	real*8 dpp_init,dth_init,dph_init,xtar_init,ytar_init,ztar_init
@@ -387,6 +390,12 @@ C Strip off header
      > stop 'ERROR: store_all in setup file!'
 	if (tmp_int.eq.1) store_all = .true.
 
+! Read in flag for carbon elastic if present
+	read (chanin,1001,end=1000,err=1000) str_line
+	write(*,*),str_line(1:last_char(str_line))
+	iss = rd_real(str_line,beam_energy)
+
+ 1000	continue
 
 C Set particle masses.
 	m2 = me2			!default to electron
@@ -457,6 +466,14 @@ C dxdz and dydz in HMS TRANSPORT coordinates.
      &          /1000.   + gen_lim_down(2)/1000.
 	  dxdz = grnd()*(gen_lim_up(3)-gen_lim_down(3))
      &          /1000.   + gen_lim_down(3)/1000.
+
+C Calculate for the elastic energy calibration using the beam energy.
+	  if(beam_energy.ne.0) then
+	     theta_sc = acos((cos_ts-dydz*sin_ts)/sqrt(1. + dxdz**2. + dydz**2.))
+	     tar_mass = 12.*931.5 !carbon
+	     el_energy = tar_mass*beam_energy/(tar_mass+2.*beam_energy*(sin(theta_sc/2.))**2)
+	     dpp = (el_energy-p_spec)/p_spec*100.
+	  endif
 
 
 	  if(ispec.eq.2) then ! SHMS
