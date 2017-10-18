@@ -469,7 +469,14 @@ C dxdz and dydz in HMS TRANSPORT coordinates.
 
 C Calculate for the elastic energy calibration using the beam energy.
 	  if(beam_energy.ne.0) then
-	     theta_sc = acos((cos_ts-dydz*sin_ts)/sqrt(1. + dxdz**2. + dydz**2.))
+	     if(ispec.eq.2) then ! SHMS
+		theta_sc = acos((cos_ts-dydz*sin_ts)/sqrt(1. + dxdz**2. + dydz**2.))
+	     elseif(ispec.eq.1) then ! HMS
+		theta_sc = acos((cos_ts+dydz*sin_ts)/sqrt(1. + dxdz**2. + dydz**2.))
+	     else
+		write(6,*) 'Elastic scattering not set up for your spectrometer' 
+		STOP
+	     endif
 	     tar_mass = 12.*931.5 !carbon
 	     el_energy = tar_mass*beam_energy/(tar_mass+2.*beam_energy*(sin(theta_sc/2.))**2)
 	     dpp = (el_energy-p_spec)/p_spec*100.
