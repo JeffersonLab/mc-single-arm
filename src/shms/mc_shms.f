@@ -58,7 +58,7 @@ C Math constants
 	logical use_front_sieve /.false./ 
 c 	logical use_sieve /.true./ 
 c        logical use_coll /.false./ ! use collimator
-        logical use_coll /.true./ ! use collimator
+        logical use_coll /.false./ ! use collimator, set to false if using sieve
 !        logical*4 spec_ntuple   /.true./
 !        logical skip_hb /.true./
         logical*4 spec_ntuple  

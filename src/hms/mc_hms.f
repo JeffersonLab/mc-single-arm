@@ -51,7 +51,10 @@ C Spectrometer definitions - for double arm monte carlo compatability
 ! should still be pretty good for optics. Physics limits (e.g. elastic
 ! peak at x<=1) will not be preserved.
 
-	logical use_sieve /.false./		!use a fake sieve slit.
+	logical use_sieve /.true./		!use a fake sieve slit.
+
+! Variables so that events are not forced through sieve
+	real*8 xs_num, ys_num, xc_sieve, yc_sieve
 
 ! No collimator - wide open
 !	parameter (h_entr = 99.)
@@ -147,18 +150,33 @@ C ================================ Executable Code =============================
 
 ! Force particles to go through the sieve slit holes, for mock sieve option.
 
+!	if (use_sieve) then
+!	  xt = x + z_entr * dxdz	!project to collimator
+!	  yt = y + z_entr * dydz
+!	  xt = 2.540*nint(xt/2.54)	!shift to nearest hole.
+!	  yt = 1.524*nint(yt/1.524)
+!	  rt = 0.254*sqrt(grnd())	!distance from center of hole(r=2.54mm)
+!	  tht= 2*pi*grnd()		!angle of offset.
+!	  xt = xt + rt*cos(tht)
+!	  yt = yt + rt*sin(tht)
+!	  dxdz = (xt-x)/z_entr		!force to correct angle.
+!	  dydz = (yt-y)/z_entr
+!	endif
+
 	if (use_sieve) then
-	  xt = x + z_entr * dxdz	!project to collimator
-	  yt = y + z_entr * dydz
-	  xt = 2.540*nint(xt/2.54)	!shift to nearest hole.
-	  yt = 1.524*nint(yt/1.524)
-	  rt = 0.254*sqrt(grnd())	!distance from center of hole(r=2.54mm)
-	  tht= 2*pi*grnd()		!angle of offset.
-	  xt = xt + rt*cos(tht)
-	  yt = yt + rt*sin(tht)
-	  dxdz = (xt-x)/z_entr		!force to correct angle.
-	  dydz = (yt-y)/z_entr
+	   xt = x + z_entr *dxdz
+	   yt = y + z_entr *dydz
+	   xs_num = anint(xt/2.54)
+	   ys_num = anint(yt/1.524)
+	   xc_sieve = 2.54*xs_num
+	   yc_sieve = 1.524*ys_num
+	   if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
+	      goto 500
+	   endif
+	   xc_sieve = xt
+	   yc_sieve = yt
 	endif
+
 
 ! Save spectrometer coordinates.
 
