@@ -283,7 +283,8 @@ C    SOS: if spectr = 2
 	else if (spectr.eq.5) then
 c	  file_name='shms/shms_hsa_2009_forward_cosy_dgfit.dat'
 c	  file_name='shms/shms_hsa_2009_forward_cosy_daveme2.dat'
-	   file_name='shms/shms-2011-26cm-monte_ideal_6ord_forward.dat'
+c	  file_name='shms/shms-2011-26cm-monte_ideal_6ord_forward.dat'
+          file_name='shms/shms-2017-26cm-monte_quads_p18_forward.dat'
 c	  file_name='shms/shms_lq_qdi_hsa_split_forward_newfit.dat'
 ! TH new optics
 !	  file_name='shms/shms2008_for_th_new.dat'
