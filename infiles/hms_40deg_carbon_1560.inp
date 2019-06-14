@@ -2,7 +2,7 @@
 ! Input file for MC_HMS_SINGLE 					07/13/2005
 ! EMC&x>1, Carbon target
 !------------------------------------------------------------------------------
-     100000	Monte-Carlo trials
+ 10000000	Monte-Carlo trials
         1       Spectrometer (1=HMS, 2=SHMS, 3=..)
      1560.0	Spectrometer momentum (in MeV/c)
      40.0	Spectrometer angle (in degrees)
@@ -33,4 +33,5 @@
      0		particle identification :e=0, p=1, d=2, pi=3, ka=4
      1		flag for multiple scattering
      1		flag for wire chamber smearing
-     1	flag for storing all events (including failed events with stop_id > 0)
+     0	flag for storing all events (including failed events with stop_id > 0)
+     1	flag for sieve slit

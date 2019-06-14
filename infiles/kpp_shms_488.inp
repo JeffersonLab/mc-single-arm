@@ -33,3 +33,5 @@
      1	flag for multiple scattering
      1	flag for wire chamber smearing
      1	flag for storing all events (including failed events with stop_id > 0)
+     1	flag for sieve slit
+     

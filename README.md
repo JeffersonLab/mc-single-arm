@@ -79,23 +79,39 @@ Info on infiles
 
 Ntuple variables in SHMS hut ntuple ntuple id = 1411 
 ---------------------
-* psxfp  Focal plane vertical position 
-* psyfp  Focal plane horizontal position
-* psxpfp Focal plane vertical angle=dx/dz
-* psypfp Focal plane horizontal angle=dy/dz
+* psxfp    Focal plane vertical position 
+* psyfp    Focal plane horizontal position
+* psxpfp   Focal plane vertical angle=dx/dz
+* psypfp   Focal plane horizontal angle=dy/dz
+* psxtari  Initial x (vertical) position at the z=0 plane perpendicular to central ray of SHMS
 * psztari  Initial random position along the target
 * psytari  Initial y (horizontal) position at the z=0 plane perpendicular to central ray of SHMS
 * psdeltai Initial random  delta = (p-pcent)/pcent
 * psyptari Initial random  horizontal angle=dy/dz
 * psxptari Initial random  vertical angle=dx/dz
-* psztar  Reconstructed position along the target
+* psztar   Reconstructed position along the target
 * psytar   Reconstructed 
-* psdelta   Reconstructed 
+* psdelta  Reconstructed 
 * psyptar  Reconstructed 
-* psxptar Reconstructed 
-* psxtari  Initial x (vertical) position at the z=0 plane perpendicular to central ray of SHMS
-* fry   Initial random vertical raster position
-* xsnum   sieve slit vertical hole number ( hole number at front sieve if use_front_sieve = true)
-* ysnum   sieve slit horizontal hole number ( hole number at front sieve if use_front_sieve = true)
+* psxptar  Reconstructed 
+* fry      Initial random vertical raster position
+* xsnum    sieve slit vertical hole number ( hole number at front sieve if use_front_sieve = true)
+* ysnum    sieve slit horizontal hole number ( hole number at front sieve if use_front_sieve = true)
 * xsieve   sieve slit vertical position (cm)  ( position at front sieve if use_front_sieve = true)
 * ysieve   sieve slit horizontal position (cm) ( position at front sieve if use_front_sieve = true)
+* vxi      Initial x_lab (horizontal) position, with spectrometer offset
+* vyi      Initial y_lab (vertical) position, with spectrometer offset
+* vzi      Initial z_lab position, with spectrometer offset
+
+----------------------
+20190610, Jixie added this following changes:
+
+1) add vxi,xyi,vzi into shms detector hut output tree
+2) make hms detector hut output tree has the same variables as shms, but keep its original names (start with hs...)
+3) add stop_id into hms transportation code.  The definition of hms stop_id is identical to those of shms.
+4) change output ntuple tree paramerter so that it can be as large as 2G
+5) add flag in input file to turn on|off sieve slit. This flag now can set up sieve slit for both hms and shms. 
+6) add target_atomic_number flag in input file to set target mass for elastic event generator.  This flag
+   must be used together with beam_energy flag.
+7) reformat most of the file I touched. I just do not like using tab key to indent. I use space instead.
+   
