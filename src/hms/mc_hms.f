@@ -24,7 +24,7 @@ C     +_________________________________________________________________________
 !     the pathlength for the CENTRAL RAY.
 C     -______________________________________________________________________________
 
-      implicit 	none
+      implicit  none
 
       include 'apertures_hms.inc'
       include 'struct_hms.inc'

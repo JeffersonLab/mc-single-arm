@@ -47,7 +47,7 @@ c  Check https://userweb.jlab.org/~brads/Manuals/pawfaq/ for details
          stop
       endif
 
-      call hbookn(1,'HUT NTUPLE',20,'HUT',10000,hut_nt_names)
+      call hbookn(1,'HUT NTUPLE',24,'HUT',10000,hut_nt_names)
 c      if (spec_ntuple) then
 c         call hbookn(2,'SPEC NTU',58,'HUT',10000,spec_nt_names)
 c      endif

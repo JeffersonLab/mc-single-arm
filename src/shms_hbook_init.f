@@ -64,7 +64,7 @@ c  Check https://userweb.jlab.org/~brads/Manuals/pawfaq/ for details
          stop
       endif
 
-      call hbookn(1411,'HUT NTUPLE',21,'HUT',10000,hut_nt_names)
+      call hbookn(1411,'HUT NTUPLE',24,'HUT',10000,hut_nt_names)
       if (spec_ntuple) then
          call hbookn(1412,'SPEC NTU',58,'HUT',10000,spec_nt_names)
       endif

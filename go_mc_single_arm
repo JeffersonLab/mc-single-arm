@@ -1,0 +1,18 @@
+#!/bin/tcsh
+
+if($#argv < 1) then
+  echo "Error, you need to provide at lease one argument"
+  echo "Usage: $0:t <path_to_inputfile>"
+  echo "       the given inputfile must be stored inside ./infiles/"
+  exit
+endif
+set inp = ($1:t:r)
+
+source ~/_cshrc  #to load h2root
+cd src
+rm -f ../worksim/${inp}.rzdat #../outfiles/${inp}.log
+./mc_single_arm << endofinput #> ../outfiles/${inp}.log
+${inp}
+endofinput
+cd ..
+h2root worksim/${inp}.rzdat worksim/${inp}.root
