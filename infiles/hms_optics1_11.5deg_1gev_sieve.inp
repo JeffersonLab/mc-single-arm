@@ -1,10 +1,10 @@
 !------------------------------------------------------------------------------
 ! Input file for MC_SINGLE_ARM 					
 !------------------------------------------------------------------------------
-   1000000	Monte-Carlo trials
-        2       Spectrometer (1=HMS, 2=SHMS, 3=..)
-     2000	Spectrometer momentum (in MeV/c)
-     20.0	Spectrometer angle (in degrees)C
+   4000000	Monte-Carlo trials
+        1       Spectrometer (1=HMS, 2=SHMS, 3=..)
+     1000	Spectrometer momentum (in MeV/c)
+     11.5	Spectrometer angle (in degrees)C
     -15.0	M.C. DP/P  down limit 
      30.0	M.C. DP/P  up   limit 
     -55.0	M.C. Theta down limit (mr)
@@ -32,4 +32,4 @@
      0	particle identification :e=0, p=1, d=2, pi=3, ka=4
      1	flag for multiple scattering
      1	flag for wire chamber smearing
-     1	flag for storing all events (including failed events with stop_id > 0)
+     0	flag for storing all events (including failed events with stop_id > 0)

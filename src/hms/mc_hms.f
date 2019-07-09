@@ -1,4 +1,4 @@
-	subroutine mc_hms (p_spec, th_spec, dpp, x, y, z, dxdz, dydz,
+  	subroutine mc_hms (p_spec, th_spec, dpp, x, y, z, dxdz, dydz,
      >		x_fp, dx_fp, y_fp, dy_fp, m2,
      >		ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, pathlen)
 

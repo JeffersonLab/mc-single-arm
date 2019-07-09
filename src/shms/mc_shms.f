@@ -55,7 +55,7 @@ C Math constants
 ! should still be pretty good for optics. Physics limits (e.g. elastic
 ! peak at x<=1) will not be preserved.
 
-	logical use_front_sieve /.false./ 
+	logical use_front_sieve /.true./ 
 c 	logical use_sieve /.true./ 
 c        logical use_coll /.false./ ! use collimator
         logical use_coll /.false./ ! use collimator, set to false if using sieve
