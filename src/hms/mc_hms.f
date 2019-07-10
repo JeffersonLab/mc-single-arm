@@ -86,7 +86,8 @@ c	parameter (z_off=+1.50)		!1996 position
 	parameter (z_off=+40.17)	!HMS100 tune (dg 5/27/98)
 
 ! z-position of important apertures.
-	real*8 z_entr,z_exit
+	real*8 z_entr,z_exit, sieve_tk
+        parameter (sieve_tk = 1.5*2.54)         !sieve thick=1.5"  
 	parameter (z_entr = 126.2e0 + z_off)	!nominally 1.262 m
 	parameter (z_exit = z_entr + 6.3e0)	!6.3 cm thick
 
@@ -125,6 +126,7 @@ c	parameter (z_off=+1.50)		!1996 position
 	real*8 y_recon
 	real*8 p,m2				!More kinematic variables.
 	real*8 xt,yt,rt,tht			!temporaries
+	real*8 xt_bs,yt_bs                      !pos at back of sieve 
 	real*8 resmult				!DC resolution factor
 	real*8 zdrift
 
@@ -173,6 +175,15 @@ C ================================ Executable Code =============================
 	   if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
 	      goto 500
 	   endif
+           
+! Check at back of sieve
+           xt_bs = xt + sieve_tk *dxdz
+           yt_bs = yt + sieve_tk *dydz
+	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. 0.3) then
+	      goto 500
+	   endif
+
+! Save pos. at front of sieve
 	   xc_sieve = xt
 	   yc_sieve = yt
 	endif
