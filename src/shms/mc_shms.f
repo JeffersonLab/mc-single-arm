@@ -118,7 +118,6 @@ c  lengths of drift in different elements
 	real*8 zd_fp
         real*8 zd_fr_sieve
         real*4 spec(58)
-	real*8 sieve_tk, 
 
 c	parameter(zd_q1in  = 307.00)
 c	parameter(zd_q1mid = 107.00)
