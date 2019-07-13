@@ -87,7 +87,7 @@ c	parameter (z_off=+1.50)		!1996 position
 
 ! z-position of important apertures.
 	real*8 z_entr,z_exit, sieve_tk
-        parameter (sieve_tk = 1.5*2.54)         !sieve thick=1.5"  
+        parameter (sieve_tk = 1.25*2.54)         !sieve thick=1.25"  
 	parameter (z_entr = 126.2e0 + z_off)	!nominally 1.262 m
 	parameter (z_exit = z_entr + 6.3e0)	!6.3 cm thick
 
@@ -165,13 +165,14 @@ C ================================ Executable Code =============================
 !	  dydz = (yt-y)/z_entr
 !	endif
 
+
 	if (use_sieve) then
 	   xt = x + z_entr *dxdz
 	   yt = y + z_entr *dydz
 	   xs_num = anint(xt/2.54)
 	   ys_num = anint(yt/1.524)
-	   xc_sieve = 2.54*xs_num
-	   yc_sieve = 1.524*ys_num
+	   xc_sieve = 2.54*xs_num   
+	   yc_sieve = 1.524*ys_num  
 	   if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
 	      goto 500
 	   endif

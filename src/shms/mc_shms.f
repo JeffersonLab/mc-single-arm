@@ -55,7 +55,7 @@ C Math constants
 ! should still be pretty good for optics. Physics limits (e.g. elastic
 ! peak at x<=1) will not be preserved.
 
-	logical use_front_sieve /.true./ 
+	logical use_front_sieve /.false./ 
 c 	logical use_sieve /.true./ 
 c        logical use_coll /.false./ ! use collimator
         logical use_coll /.false./ ! use collimator, set to false if using sieve
@@ -66,6 +66,7 @@ c        logical use_coll /.false./ ! use collimator
         logical skip_hb /.false./
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
+	real*8 xt_bs, yt_bs, sieve_tk
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
         logical use_sieve
 c
@@ -117,6 +118,7 @@ c  lengths of drift in different elements
 	real*8 zd_fp
         real*8 zd_fr_sieve
         real*4 spec(58)
+	real*8 sieve_tk, 
 
 c	parameter(zd_q1in  = 307.00)
 c	parameter(zd_q1mid = 107.00)
@@ -179,6 +181,7 @@ c        parameter(zd_fp    = 307.95)
 
 
 C Distances for 2017 ME's
+        parameter (sieve_tk = 1.25*2.54)         !sieve thick=1.25"  
         parameter(zd_fr_sieve  = 108.0)
         parameter(zd_hbin  = 118.39)
 	parameter(zd_hbmen = 17.61) ! shms-2017 ME's
@@ -420,6 +423,7 @@ c sieve in front of HB
            spec(8)=yt
           endif
 
+	  
           if (use_sieve ) then
   	   zdrift = z_entr
            xt=xs + zdrift*dxdzs
@@ -433,8 +437,20 @@ c sieve in front of HB
            endif
 	   xc_sieve=xt
 	   yc_sieve=yt
-          endif
-! simulate collimator -------------------------------------------------
+
+! Check at back of sieve
+           xt_bs = xt + sieve_tk *dxdzs
+           yt_bs = yt + sieve_tk *dydzs
+	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. 0.3) then
+	      goto 500
+	   endif
+
+! Save pos. at front of sieve
+	   xc_sieve = xt
+	   yc_sieve = yt
+	endif
+
+!simulate collimator -------------------------------------------------
 c
           if (use_coll) then
 c           tpathlen=pathlen
