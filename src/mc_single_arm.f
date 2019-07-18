@@ -21,8 +21,8 @@ c Vector (real*4) for hut ntuples - needs to match dimension of variables
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
-        logical use_front_sieve /.true./
-        logical use_sieve /.true./ 
+        logical use_front_sieve /.false./
+        logical use_sieve /.true./            !Also set in mc_hms.f
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
      > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
@@ -456,7 +456,7 @@ C Units are cm.
           elseif(gen_lim(6).eq.-2) then                 !optics2: two foils
              foil_nm=grnd()                             !20um foils; z= +/- 5cm
              foil_nm=anint(foil_nm)                     != 0, 1
-	     z = (grnd() - 0.5) * foil_tk - 5+ foil_nm * 5
+	     z = (grnd() - 0.5) * foil_tk - 5+ foil_nm * 10
 
           endif
 C DJG Assume flat raster
