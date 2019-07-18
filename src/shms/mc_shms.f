@@ -68,7 +68,7 @@ c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xt_bs, yt_bs, sieve_tk
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
-        logical use_sieve
+        logical use_sieve                      !set in mc-single-arm.f
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
      > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
@@ -434,12 +434,10 @@ c sieve in front of HB
            if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
               goto 500
            endif
-	   xc_sieve=xt
-	   yc_sieve=yt
 
 ! Check at back of sieve
-           xt_bs = xt + sieve_tk *dxdzs
-           yt_bs = yt + sieve_tk *dydzs
+           xt_bs = xt + sieve_tk*dxdzs
+           yt_bs = yt + sieve_tk*dydzs
 	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. 0.3) then
 	      goto 500
 	   endif
