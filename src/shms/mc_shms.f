@@ -66,8 +66,9 @@ c        logical use_coll /.false./ ! use collimator
         logical skip_hb /.false./
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
+	real*8 xt_bs, yt_bs, sieve_tk
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
-        logical use_sieve
+        logical use_sieve                      !set in mc-single-arm.f
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
      > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
@@ -179,6 +180,7 @@ c        parameter(zd_fp    = 307.95)
 
 
 C Distances for 2017 ME's
+        parameter (sieve_tk = 1.25*2.54)         !sieve thick=1.25"  
         parameter(zd_fr_sieve  = 108.0)
         parameter(zd_hbin  = 118.39)
 	parameter(zd_hbmen = 17.61) ! shms-2017 ME's
@@ -420,6 +422,7 @@ c sieve in front of HB
            spec(8)=yt
           endif
 
+	  
           if (use_sieve ) then
   	   zdrift = z_entr
            xt=xs + zdrift*dxdzs
@@ -431,10 +434,20 @@ c sieve in front of HB
            if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
               goto 500
            endif
-	   xc_sieve=xt
-	   yc_sieve=yt
-          endif
-! simulate collimator -------------------------------------------------
+
+! Check at back of sieve
+           xt_bs = xt + sieve_tk*dxdzs
+           yt_bs = yt + sieve_tk*dydzs
+	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. 0.3) then
+	      goto 500
+	   endif
+
+! Save pos. at front of sieve
+	   xc_sieve = xt
+	   yc_sieve = yt
+	endif
+
+!simulate collimator -------------------------------------------------
 c
           if (use_coll) then
 c           tpathlen=pathlen
