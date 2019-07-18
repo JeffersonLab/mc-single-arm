@@ -22,7 +22,7 @@ c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
         logical use_front_sieve /.false./
-        logical use_sieve /.false./ 
+        logical use_sieve /.false./            !Also set in mc_hms.f
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
      > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
@@ -58,6 +58,8 @@ C Event limits, topdrawer limits, physics quantities
 
 	real*8 x_a,y_a,z_a,dydz_a,dif_a,dydz_aa,dif_aa   ! TH - for target aperture check
 	real*8 musc_targ_len			!target length for multiple scattering
+        real*8 foil_nm, foil_tk                 !multifoil target
+        parameter (foil_tk=0.02)
 	real*8 m2				!particle mass squared.
 	real*8 rad_len_cm			!conversion r.l. to cm for target
 	real*8 pathlen				!path length through spectrometer.
@@ -442,8 +444,21 @@ C Units are cm.
 ! TH - use a double precision for random number generation here.
 	  x = gauss1(th_nsig_max) * gen_lim(4) / 6.0	!beam width
 	  y = gauss1(th_nsig_max) * gen_lim(5) / 6.0	!beam height
-	  z = (grnd() - 0.5) * gen_lim(6)		!along target
 
+          if(gen_lim(6).gt.0) then                      
+	     z = (grnd() - 0.5) * gen_lim(6)		!along target
+
+          elseif(gen_lim(6).eq.-3) then                 !optics1: three foils
+             foil_nm=3*grnd()-1.5                       !20um foils;  z=0, +/- 10cm
+             foil_nm=anint(foil_nm)                     != -1, 0, 1
+	     z = (grnd() - 0.5) * foil_tk + foil_nm * 10
+
+          elseif(gen_lim(6).eq.-2) then                 !optics2: two foils
+             foil_nm=grnd()                             !20um foils; z= +/- 5cm
+             foil_nm=anint(foil_nm)                     != 0, 1
+	     z = (grnd() - 0.5) * foil_tk - 5+ foil_nm * 10
+
+          endif
 C DJG Assume flat raster
 	  fr1 = (grnd() - 0.5) * gen_lim(7)   !raster x
 	  fr2 = (grnd() - 0.5) * gen_lim(8)   !raster y
