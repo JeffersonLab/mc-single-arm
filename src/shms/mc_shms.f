@@ -13,12 +13,12 @@ C     +_________________________________________________________________________
 !     
 !     Modification History:
 !     
-!     >1-Aug-1993	(D. Potterveld) Modified to use new transformation scheme in
+!     11-Aug-1993	(D. Potterveld) Modified to use new transformation scheme in
 !     which each transformation begins at the pivot.
 !     
-!     >9-AUG-1993  (D. Potterveld) Modified to use COSY INFINITY transformations.
+!     19-AUG-1993  (D. Potterveld) Modified to use COSY INFINITY transformations.
 !     
-!     >5-SEP-1997  MODIFY stepping through spectrometer so that all drifts
+!     15-SEP-1997  MODIFY stepping through spectrometer so that all drifts
 !     use project.f (not transp.f), and so that project.f and
 !     transp.f take care of decay.  Decay distances all assume
 !     the pathlength for the CENTRAL RAY.
@@ -64,7 +64,8 @@ c     logical use_coll /.false./ ! use collimator
       logical*4 spec_ntuple  
       common /shms_flags/ spec_ntuple
       logical skip_hb /.false./
-c     
+c
+      real*8 sieve_hole_r  ! define this variable for sieve hole radius
       real*8 xs_num,ys_num,xc_sieve,yc_sieve
       real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
       logical use_sieve
@@ -81,8 +82,8 @@ C     The arguments
       logical ms_flag, wcs_flag !particle, m_scat, wc_smear
       logical	ok_spec		!true if particle makes it
       logical decay_flag,dflag
-      real*8 fry 		!fast raster y position.
-      real*8 m2                 !mass for call to mc_hms(sos). Changes if decay
+      real*8 fry    !fast raster y position.
+      real*8 m2     !mass for call to mc_hms(sos). Changes if decay
       real*8 pathlen,tpathlen
       real*8 resmult		!DC resolution factor
 c     collimator
@@ -302,18 +303,22 @@ C     Top of Monte-Carlo loop                            C
 C------------------------------------------------------------------------------C
 
 C     Begin transporting particle.
+! Jixie: These are 2 options for the front sieve, passive sieve 1 and passive sieve 2.
+! For both sieves, the hole diameters are all 3mm. vertical gap 22mm and horizontal gap 18mm.
+! sieve 1 has 5x5 pattern, but one hole (ys_num=1,xs_num=1) is not drilled thru. 
+! sieve 2 has 4x5 pattern, all holes are drilled thru. 
+! there are position offsets for both sieves, but the code below does not take this into account
 
 c     sieve in front of HB
       if ( use_front_sieve) then
          zdrift = zd_fr_sieve
          xt=xs + zdrift*dxdzs
          yt=ys + zdrift*dydzs
-         xsfr_num=anint(xt/1.1)
-         ysfr_num=anint(yt/0.9)
-         xc_frsieve=1.1*xsfr_num
-         yc_frsieve=0.9*ysfr_num
-         if ( sqrt((xc_frsieve - xt)**2+(yc_frsieve - yt)**2) .gt.
-     >        0.15 ) then
+         xsfr_num=anint(xt/2.2)
+         ysfr_num=anint(yt/1.8)
+         xc_frsieve=2.2*xsfr_num
+         yc_frsieve=1.8*ysfr_num
+         if ( sqrt((xc_frsieve - xt)**2+(yc_frsieve - yt)**2) .gt. 0.15 ) then
             shmsSTOP_FRONTSLIT_hor = shmsSTOP_FRONTSLIT_hor +1
             shmsSTOP_id = -1 
             goto 500
@@ -323,8 +328,7 @@ c     sieve in front of HB
         zdrift = zd_fr_sieve+3.
         xt=xs + zdrift*dxdzs
         yt=ys + zdrift*dydzs
-        if ( sqrt((xc_frsieve - xt)**2+(yc_frsieve - yt)**2) .gt.
-     >       0.15 ) then
+        if ( sqrt((xc_frsieve - xt)**2+(yc_frsieve - yt)**2) .gt. 0.15 ) then
            shmsSTOP_FRONTSLIT_vert = shmsSTOP_FRONTSLIT_vert + 1
            shmsSTOP_id = -1 
            goto 500
@@ -426,16 +430,28 @@ c     sieve in front of HB
          spec(7)=xt
          spec(8)=yt
       endif
-
+      
+! SHMS has 11x11 sieve pattern: 2 small holes and 2 holes are not drill thru
+! 2 small holes (d=3mm): (ys_num=0,xs_num=0) and (ys_num=-3,xs_num=-2)
+! 2 not drilled holes: (ys_num=3,xs_num=1) and (ys_num=-1,xs_num=-1)
+! 117 big holes (d=6mm), vertical gap 25mm, horizontal gap 16.4mm
+! keep in mind that +xs is vertical down, +ys and horizontal left 
       if (use_sieve) then
          zdrift = z_entr
          xt=xs + zdrift*dxdzs
          yt=ys + zdrift*dydzs
-         xs_num=anint(xt/2.5)
+         xs_num=anint(xt/2.50)    !anint() will round given real value to the nearest whole integer number
          ys_num=anint(yt/1.64)
          xc_sieve=2.5*xs_num
          yc_sieve=1.64*ys_num
-         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
+         if((ys_num.eq.0 .and. xs_num.eq.0) .or. (ys_num.eq.-3 .and. xs_num.eq.-2)) then
+            sieve_hole_r = 0.15
+         else if((ys_num.eq.3 .and. xs_num.eq.1) .or. (ys_num.eq.-1 .and. xs_num.eq.-1)) then
+            sieve_hole_r = 0.0
+         else  
+            sieve_hole_r = 0.30
+         endif
+         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. sieve_hole_r) then
             shmsSTOP_DOWNSLIT = shmsSTOP_DOWNSLIT + 1
             shmsSTOP_id = 99
             goto 500

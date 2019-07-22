@@ -102,8 +102,8 @@ C     Function definitions.
       real*8  grnd,gauss1
       INTEGER irnd
       REAL rnd(99)
-      integer      itime,ij
-      character	timestring*30
+      integer   itime,pid
+      character timestring*30
 
       character*80 rawname, filename, hbook_filename
       real*4  secnds,zero
@@ -445,9 +445,14 @@ C------------------------------------------------------------------------------C
 
 !     TH - use "Itrial" instead of "trial" for gfortran. Somehow the stringlib.f
 !     function does not type cast string to integer otherwise.
+      pid=getpid()
       itime=time8()
       call ctime(itime,timestring)
-c     call srand(itime)
+! next line is to initialize the random seed. But it does not work since this program
+! uses random gernerator written in 'mt19937.f'  
+!      call srand(itime)      ! does not work for mt19937.f
+       call sgrnd(pid+itime)  ! this will work for mt19937.f
+
 
       do Itrial = 1,n_trials
          if(ispec.eq.1) then

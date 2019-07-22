@@ -56,10 +56,8 @@ C     By Jixie:  I use the common block from the main file 'mc_single_arm.f'
 C     Therefore we do not have to define the following variables here.
 C     My goal is to include 'xs_num, ys_num, xc_sieve, yc_sieve' into the ntuple
 
-!     old!	logical use_sieve /.true./		!use a fake sieve slit.
-!     old!Variables so that events are not forced through sieve
-!     old!	real*8 xs_num, ys_num, xc_sieve, yc_sieve
-c     
+c
+      real*8 sieve_hole_r  ! define this variable for sieve hole radius
       real*8 xs_num,ys_num,xc_sieve,yc_sieve
       real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
       logical use_sieve
@@ -175,14 +173,26 @@ C     ================================ Executable Code =========================
 !     dydz = (yt-y)/z_entr
 !     endif
 
+! HMS has 9x9 sieve pattern: 1 small hole and 2 holes are not drill thru
+! 1 small holes (d=0.1"=2.54mm): (ys_num=0,xs_num=0) 
+! 2 not drilled holes: (ys_num=1,xs_num=1) and (ys_num=-1,xs_num=-2)
+! 78 big holes (d=0.2"=5.08mm), vertical gap 1"=25.4mm, horizontal gap 0.6"=15.24mm
+! keep in mind that +xs is vertical down, +ys and horizontal left 
       if (use_sieve) then
          xt = x + z_entr *dxdz
          yt = y + z_entr *dydz
-         xs_num = anint(xt/2.54)
+         xs_num = anint(xt/2.54)    !anint() will round given real value to the nearest whole integer number
          ys_num = anint(yt/1.524)
          xc_sieve = 2.54*xs_num
          yc_sieve = 1.524*ys_num
-         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
+         if(ys_num.eq.0 .and. xs_num.eq.0) then
+            sieve_hole_r = 0.127
+         else if((ys_num.eq.1 .and. xs_num.eq.1) .or. (ys_num.eq.-1 .and. xs_num.eq.-2)) then
+            sieve_hole_r = 0.0
+         else  
+            sieve_hole_r = 0.254
+         endif
+         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. sieve_hole_r) then
             hSTOP_slit = hSTOP_slit + 1
             hSTOP_id = 99
             goto 500

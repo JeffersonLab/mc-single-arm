@@ -115,3 +115,6 @@ Ntuple variables in SHMS hut ntuple ntuple id = 1411
    must be used together with beam_energy flag.
 7) reformat most of the file I touched. I just do not like using tab key to indent. I use space instead.
    
+
+20190717, Jixie did this following changes:
+1) Updated sieve hole pattern and size to match engneering drawing for both HMS and SHMS

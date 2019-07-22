@@ -2,17 +2,29 @@
 
 if($#argv < 1) then
   echo "Error, you need to provide at lease one argument"
-  echo "Usage: $0:t <path_to_inputfile>"
+  echo "Usage: $0:t <path_to_inputfile> [run_min=1] [run_max=1]"
   echo "       the given inputfile must be stored inside ./infiles/"
   exit
 endif
 set inp = ($1:t:r)
+set runmin = 1
+if($#argv >= 2) set runmin = ($2)
+set runmax = 1
+if($#argv >= 3) set runmax = ($3)
 
 source ~/_cshrc  #to load h2root
+
 cd src
-rm -f ../worksim/${inp}.rzdat #../outfiles/${inp}.log
-./mc_single_arm << endofinput #> ../outfiles/${inp}.log
+set run = ($runmin)
+while ($run <= $runmax) 
+  rm -f ../worksim/${inp}.rzdat #../outfiles/${inp}_${run}.log
+ ./mc_single_arm << endofinput #> ../outfiles/${inp}_${run}.log
 ${inp}
 endofinput
+  set key = (${run})
+  if ($run < 10) set key = (0${run})
+  mv ../worksim/${inp}.rzdat ../worksim/${inp}_${key}.rzdat
+  h2root ../worksim/${inp}_${key}.rzdat ../worksim/${inp}_${key}.root
+  @ run = $run + 1
+end
 cd ..
-h2root worksim/${inp}.rzdat worksim/${inp}.root
