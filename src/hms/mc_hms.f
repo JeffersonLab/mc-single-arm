@@ -51,10 +51,14 @@ C Spectrometer definitions - for double arm monte carlo compatability
 ! should still be pretty good for optics. Physics limits (e.g. elastic
 ! peak at x<=1) will not be preserved.
 
-	logical use_sieve /.false./		!use a fake sieve slit.
-
-! Variables so that events are not forced through sieve
 	real*8 xs_num, ys_num, xc_sieve, yc_sieve
+	real*8 xsfr_num, ysfr_num, xc_frsieve, yc_frsieve
+	logical use_sieve, use_front_sieve		
+
+        common /sieve_info/ xs_num,ys_num,xc_sieve,yc_sieve
+     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve, use_front_sieve
+         
+! Variables so that events are not forced through sieve
 
 ! No collimator - wide open
 !	parameter (h_entr = 99.)
