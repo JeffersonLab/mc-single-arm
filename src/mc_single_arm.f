@@ -25,7 +25,7 @@ c
         logical use_sieve /.false./            !Also set in mc_hms.f
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
-     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve
+     > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve, use_front_sieve
 
 
 C Local declarations.
