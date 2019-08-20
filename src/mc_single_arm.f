@@ -397,6 +397,16 @@ C Strip off header
 	write(*,*),str_line(1:last_char(str_line))
 	iss = rd_real(str_line,beam_energy)
 
+! Read in flag to use sieve
+	read (chanin,1001,end=1000,err=1000) str_line
+	write(*,*),str_line(1:last_char(str_line))
+	if (.not.rd_int(str_line,tmp_int)) 
+     > stop 'ERROR: use_sieve in setup file!'
+	if (tmp_int.eq.1) then
+	  if (ispec.eq.1) use_sieve=.true.
+	  if (ispec.eq.2) use_front_sieve=.true.
+        endif
+
  1000	continue
 
 C Set particle masses.
@@ -715,7 +725,6 @@ C for spectrometer ntuples
 	       hms_hut(15)= dpp_recon
 	       hms_hut(16)= fry
 	       if (use_sieve) then
-                  write(6,*), xs_num, xc_sieve
 		  hms_hut(17)= xs_num
 		  hms_hut(18)= ys_num
 		  hms_hut(19)= xc_sieve
