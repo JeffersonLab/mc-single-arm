@@ -17,12 +17,12 @@ c Vector (real*4) for hut ntuples - needs to match dimension of variables
 	real*4		shms_hut(21)
 	real*4          shms_spec(58)
 
-	real*4          hms_hut(15)
+	real*4          hms_hut(21)
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
         logical use_front_sieve /.false./
-        logical use_sieve /.false./            !Also set in mc_hms.f
+        logical use_sieve /.false./           
 c
         common /sieve_info/  xs_num,ys_num,xc_sieve,yc_sieve
      > ,xsfr_num,ysfr_num,xc_frsieve,yc_frsieve,use_sieve, use_front_sieve
@@ -702,20 +702,29 @@ C for spectrometer ntuples
 	       hms_hut(2) = y_fp
 	       hms_hut(3) = dx_fp
 	       hms_hut(4) = dy_fp
-	       hms_hut(5) = ytar_init
-	       hms_hut(6) = dpp_init
-	       hms_hut(7) = dth_init/1000.
-	       hms_hut(8) = dph_init/1000.
-	       hms_hut(9) = ytar_recon
-	       hms_hut(10)= dpp_recon
-	       hms_hut(11)= dth_recon/1000.
+	       hms_hut(5) = xtar_init
+	       hms_hut(6) = ytar_init
+	       hms_hut(7) = dph_init/1000.
+	       hms_hut(8) = dth_init/1000.
+	       hms_hut(9) = ztar_init
+	       hms_hut(10)= dpp_init
+	       hms_hut(11)= ytar_recon
 	       hms_hut(12)= dph_recon/1000.
-	       hms_hut(13) = fry
-	       hms_hut(14)= ztar_init 
+	       hms_hut(13)= dth_recon/1000.
+	       hms_hut(14)= ztar_recon
+	       hms_hut(15)= dpp_recon
+	       hms_hut(16)= fry
+	       if (use_sieve) then
+                  write(6,*), xs_num, xc_sieve
+		  hms_hut(17)= xs_num
+		  hms_hut(18)= ys_num
+		  hms_hut(19)= xc_sieve
+		  hms_hut(20)= yc_sieve
+	       endif
 	       if(ok_spec) then
-		  hms_hut(15)= 0
+		  hms_hut(21)= 0
 	       else
-		  hms_hut(15)=99
+		  hms_hut(21)=99
 	       endif
 	       call hfn(1,hms_hut)
 	    endif
