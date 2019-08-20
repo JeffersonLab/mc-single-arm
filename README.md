@@ -31,9 +31,7 @@ mc_single_arm
 ** hut_ntuple : Write out ntuple (1 for HMS and 1411 for SHMS) described below. (true)
 ** spec_ntuple: Write out ntuple 1412 described below (false)
 ** decay_flag :	Allow decay of particle(false)
-** use_front_sieve : Pass particles through front sieve (false)   
 * Hard coded flags in shms/mc_shms.f 
-** use_sieve : pass particles through the sieve between HB and Q1 (false)
 ** use_coll  : pass particles through the collimator between HB and Q1 (true)
 
 Code flow
@@ -75,7 +73,8 @@ Info on infiles
 * Remember to keep the Dp/p,theta,phi and ztgt reconstruction cut larger than thrown. 
 * The target length just need to set flag if aerogel will be in the detector stack
 * Up to the experiment to decide if the 1st Cerenkov detector will be needed for the experiemnt
-* If 1st Cerenkov not used then can replace with vacuum pipe. Option of helium bag is availble. this was for study.  
+* If 1st Cerenkov not used then can replace with vacuum pipe. Option of helium bag is availble. this was for study.
+* The multifoil optics targets can be implementented by entering the target length as -2 for the optics2 target (two foils) and -3 for optics1 target (three foils).
 
 Ntuple variables in SHMS hut ntuple ntuple id = 1411 
 ---------------------
@@ -99,3 +98,8 @@ Ntuple variables in SHMS hut ntuple ntuple id = 1411
 * ysnum   sieve slit horizontal hole number ( hole number at front sieve if use_front_sieve = true)
 * xsieve   sieve slit vertical position (cm)  ( position at front sieve if use_front_sieve = true)
 * ysieve   sieve slit horizontal position (cm) ( position at front sieve if use_front_sieve = true)
+* stop_id information on where track ended (0=successful reached detector hut)
+
+Ntuple variables in HMS hut ntuple ntuple id = 1 
+---------------------
+same as SHMS except variables start with "hs" instead of "ps". e.g. psdelta ---> hsdelta 
