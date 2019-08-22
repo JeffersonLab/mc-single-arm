@@ -14,10 +14,10 @@ C-______________________________________________________________________________
 	include 'constants.inc'
 
 c Vector (real*4) for hut ntuples - needs to match dimension of variables
-	real*4		shms_hut(21)
+	real*4		shms_hut(23)
 	real*4          shms_spec(58)
 
-	real*4          hms_hut(21)
+	real*4          hms_hut(23)
 c
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
@@ -691,17 +691,15 @@ C for spectrometer ntuples
 	       shms_hut(14)= dph_recon/1000.
 	       shms_hut(15)= xtar_init
 	       shms_hut(16)= fry
-	       shms_hut(17)= xs_num
-	       shms_hut(18)= ys_num
-	       shms_hut(19)= xc_sieve
-	       shms_hut(20)= yc_sieve
-	       shms_hut(21)= stop_id
 	       if (use_front_sieve) then
 		  shms_hut(17)= xsfr_num
 		  shms_hut(18)= ysfr_num
 		  shms_hut(19)= xc_frsieve
 		  shms_hut(20)= yc_frsieve
 	       endif
+	       shms_hut(21)= stop_id
+	       shms_hut(22)= x
+	       shms_hut(23)= y
 	       call hfn(1411,shms_hut)
 	    endif
 	 endif
@@ -735,6 +733,8 @@ C for spectrometer ntuples
 	       else
 		  hms_hut(21)=99
 	       endif
+	       hms_hut(22)= x
+	       hms_hut(23)= y
 	       call hfn(1,hms_hut)
 	    endif
 	 endif

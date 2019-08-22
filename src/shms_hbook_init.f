@@ -11,12 +11,13 @@ C HBOOK/NTUPLE common block and parameters.
       integer*4 hbdata
       common /QUEST/ iquest(100)
       integer*4 iquest
-      character*8	hut_nt_names(21)/
+      character*8	hut_nt_names(23)/
      >     'psxfp', 'psyfp', 'psxpfp', 'psypfp',
      >     'psztari','psytari', 'psdeltai', 'psyptari', 'psxptari',
      >     'psztar','psytar', 'psdelta', 'psyptar', 'psxptar', 
-     >     'psxtari','fry','xsnum','ysnum','xsieve'
-     >     ,'ysieve','stop_id'/
+     >     'psxtari','fry','xsnum','ysnum','xsieve',
+     >     'ysieve','stop_id',
+     >     'psvxi','psvyi' /
 
       character*8	spec_nt_names(58)/
      >     's_hb1_x', 's_hb1_y','s_hb2_x', 's_hb2_y','s_hb3_x', 
@@ -64,7 +65,7 @@ c  Check https://userweb.jlab.org/~brads/Manuals/pawfaq/ for details
          stop
       endif
 
-      call hbookn(1411,'HUT NTUPLE',21,'HUT',10000,hut_nt_names)
+      call hbookn(1411,'HUT NTUPLE',23,'HUT',10000,hut_nt_names)
       if (spec_ntuple) then
          call hbookn(1412,'SPEC NTU',58,'HUT',10000,spec_nt_names)
       endif
