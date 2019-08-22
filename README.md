@@ -100,6 +100,8 @@ Ntuple variables in SHMS hut ntuple ntuple id = 1411
 * xsieve   sieve slit vertical position (cm)  ( position at front sieve if use_front_sieve = true)
 * ysieve   sieve slit horizontal position (cm) ( position at front sieve if use_front_sieve = true)
 * stop_id information on where the track ended (0=successful reached detectors)
+* psvxi initial x position in the beam following system
+* psvyi initial y position in the beam following system
 
 Ntuple variables in HMS hut ntuple ntuple id = 1 
 ---------------------
