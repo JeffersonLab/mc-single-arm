@@ -66,8 +66,8 @@ C Event limits, topdrawer limits, physics quantities
 	logical*4 ok_spec			!indicates whether event makes it in MC
 	integer*4 hit_calo                      !flag for hitting the calorimeter
 	integer*4 armSTOP_successes,armSTOP_trials
-        real *8 beam_energy, el_energy, theta_sc, tar_mass !elastic calibration
-
+        real *8 beam_energy, el_energy, theta_sc!elastic calibration
+        real *8 tar_mass, tar_atom_num          !elastic calibration
 C Initial and reconstructed track quantities.
 	real*8 dpp_init,dth_init,dph_init,xtar_init,ytar_init,ztar_init
 	real*8 dpp_recon,dth_recon,dph_recon,ztar_recon,ytar_recon
@@ -392,11 +392,13 @@ C Strip off header
      > stop 'ERROR: store_all in setup file!'
 	if (tmp_int.eq.1) store_all = .true.
 
-! Read in flag for carbon elastic if present
-	read (chanin,1001,end=1000,err=1000) str_line
-	write(*,*),str_line(1:last_char(str_line))
-	iss = rd_real(str_line,beam_energy)
-
+!     Read in flag for 'beam energy(MeV)' to trigger on elastic event if present
+      beam_energy=-0.1  !by default do not use elastic event generator
+      tar_atom_num=12.  !by default it is carbon
+      read (chanin,1001,end=1000,err=1000) str_line
+      write(*,*),str_line(1:last_char(str_line))
+      iss = rd_real(str_line,beam_energy)
+      
 ! Read in flag to use sieve
 	read (chanin,1001,end=1000,err=1000) str_line
 	write(*,*),str_line(1:last_char(str_line))
@@ -406,6 +408,12 @@ C Strip off header
 	  if (ispec.eq.1) use_sieve=.true.
 	  if (ispec.eq.2) use_front_sieve=.true.
         endif
+
+!     Read in flag for 'target atomic number (Z+N)' for elastic event if present
+      read (chanin,1001,end=1000,err=1000) str_line
+      write(*,*),str_line(1:last_char(str_line))
+      iss = rd_real(str_line,tar_atom_num)
+
 
  1000	continue
 
@@ -493,7 +501,7 @@ C dxdz and dydz in HMS TRANSPORT coordinates.
      &          /1000.   + gen_lim_down(3)/1000.
 
 C Calculate for the elastic energy calibration using the beam energy.
-	  if(beam_energy.ne.0) then
+	  if(beam_energy.gt.0) then
 	     if(ispec.eq.2) then ! SHMS
 		theta_sc = acos((cos_ts-dydz*sin_ts)/sqrt(1. + dxdz**2. + dydz**2.))
 	     elseif(ispec.eq.1) then ! HMS
@@ -502,7 +510,7 @@ C Calculate for the elastic energy calibration using the beam energy.
 		write(6,*) 'Elastic scattering not set up for your spectrometer' 
 		STOP
 	     endif
-	     tar_mass = 12.*931.5 !carbon
+	     tar_mass = tar_atom_num*931.5 !carbon
 	     el_energy = tar_mass*beam_energy/(tar_mass+2.*beam_energy*(sin(theta_sc/2.))**2)
 	     dpp = (el_energy-p_spec)/p_spec*100.
 	  endif
