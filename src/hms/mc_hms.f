@@ -153,7 +153,7 @@ C ================================ Executable Code =============================
 	dflag = .false.			!particle has not decayed yet
 	hSTOP_trials = hSTOP_trials + 1
 	xt = th_spec	!avoid 'unused variable' error for th_spec
-
+        hstop_id = 0
 ! Force particles to go through the sieve slit holes, for mock sieve option.
 
 !	if (use_sieve) then
@@ -178,6 +178,8 @@ C ================================ Executable Code =============================
 	   xc_sieve = 2.54*xs_num   
 	   yc_sieve = 1.524*ys_num  
 	   if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
+              hSTOP_slit = hSTOP_slit + 1
+              hSTOP_id = 99 
 	      goto 500
 	   endif
            
@@ -185,10 +187,12 @@ C ================================ Executable Code =============================
            xt_bs = xt + sieve_tk *dxdz
            yt_bs = yt + sieve_tk *dydz
 	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. 0.3) then
+              hSTOP_slit = hSTOP_slit + 1
+              hSTOP_id = 99
 	      goto 500
 	   endif
 
-! Save pos. at front of sieve
+! Resuse *c_sieve to save pos. at front of sieve
 	   xc_sieve = xt
 	   yc_sieve = yt
 	endif
@@ -228,15 +232,18 @@ C------------------------------------------------------------------------------C
 	  zdrift = z_entr
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if (abs(ys-y_off).gt.h_entr) then
-	    hSTOP_slit_hor = hSTOP_slit_hor + 1
+	    hSTOP_fAper_hor = hSTOP_fAper_hor + 1
+	    hSTOP_id = 5
 	    goto 500
 	  endif
 	  if (abs(xs-x_off).gt.v_entr) then
-	    hSTOP_slit_vert = hSTOP_slit_vert + 1
+	    hSTOP_fAper_vert = hSTOP_fAper_vert + 1
+	    hSTOP_id = 5
 	    goto 500
 	  endif
 	  if (abs(xs-x_off).gt. (-v_entr/h_entr*abs(ys-y_off)+3*v_entr/2)) then
-	    hSTOP_slit_oct = hSTOP_slit_oct + 1
+	    hSTOP_fAper_oct = hSTOP_fAper_oct + 1
+	    hSTOP_id = 5
 	    goto 500
 	  endif
 
@@ -245,15 +252,18 @@ C------------------------------------------------------------------------------C
 	  zdrift = z_exit-z_entr
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if (abs(ys-y_off).gt.h_exit) then
-	    hSTOP_slit_hor = hSTOP_slit_hor + 1
+	    hSTOP_bAper_hor = hSTOP_bAper_hor + 1
+	    hSTOP_id = 6
 	    goto 500
 	  endif
 	  if (abs(xs-x_off).gt.v_exit) then
-	    hSTOP_slit_vert = hSTOP_slit_vert + 1
+	    hSTOP_bAper_vert = hSTOP_bAper_vert + 1
+	    hSTOP_id = 6
 	    goto 500
 	  endif
 	  if (abs(xs-x_off).gt. (-v_exit/h_exit*abs(ys-y_off)+3*v_exit/2)) then
-	    hSTOP_slit_oct = hSTOP_slit_oct + 1
+	    hSTOP_bAper_oct = hSTOP_bAper_oct + 1
+	    hSTOP_id = 6
 	    goto 500
 	  endif
 
@@ -264,6 +274,7 @@ C------------------------------------------------------------------------------C
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	    hSTOP_Q1_in = hSTOP_Q1_in + 1
+	    hSTOP_id = 7
 	    goto 500
 	  endif
 
@@ -272,6 +283,7 @@ C------------------------------------------------------------------------------C
 	  call transp(spectr,2,decay_flag,dflag,m2,p,125.233e0,pathlen)
 	  if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	    hSTOP_Q1_mid = hSTOP_Q1_mid + 1
+	    hSTOP_id = 8
 	    goto 500
 	  endif
 
@@ -280,6 +292,7 @@ C------------------------------------------------------------------------------C
 	  call transp(spectr,3,decay_flag,dflag,m2,p,62.617e0,pathlen)
 	  if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	    hSTOP_Q1_out = hSTOP_Q1_out + 1
+	    hSTOP_id = 9
 	    goto 500
 	  endif
 
@@ -290,6 +303,7 @@ C------------------------------------------------------------------------------C
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	    hSTOP_Q2_in = hSTOP_Q2_in + 1
+	    hSTOP_id = 12
 	    goto 500
 	  endif
 
@@ -298,6 +312,7 @@ C------------------------------------------------------------------------------C
 	  call transp(spectr,5,decay_flag,dflag,m2,p,143.90e0,pathlen)
 	  if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	    hSTOP_Q2_mid = hSTOP_Q2_mid + 1
+	    hSTOP_id = 13
 	    goto 500
 	  endif
 
@@ -306,6 +321,7 @@ C------------------------------------------------------------------------------C
 	  call transp(spectr,6,decay_flag,dflag,m2,p,71.95e0,pathlen)
 	  if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	    hSTOP_Q2_out = hSTOP_Q2_out + 1
+	    hSTOP_id = 14
 	    goto 500
 	  endif
 
@@ -316,6 +332,7 @@ C------------------------------------------------------------------------------C
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	    hSTOP_Q3_in = hSTOP_Q3_in + 1
+	    hSTOP_id = 17
 	    goto 500
 	  endif
 
@@ -324,6 +341,7 @@ C------------------------------------------------------------------------------C
 	  call transp(spectr,8,decay_flag,dflag,m2,p,143.8e0,pathlen)
 	  if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	    hSTOP_Q3_mid = hSTOP_Q3_mid + 1
+	    hSTOP_id = 18
 	    goto 500
 	  endif
 
@@ -332,6 +350,7 @@ C------------------------------------------------------------------------------C
 	  call transp(spectr,9,decay_flag,dflag,m2,p,71.9e0,pathlen)
 	  if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	    hSTOP_Q3_out = hSTOP_Q3_out + 1
+	    hSTOP_id = 19
 	    goto 500
 	  endif
 
@@ -346,6 +365,7 @@ C------------------------------------------------------------------------------C
 	  call rotate_haxis(-6.0e0,xt,yt)
 	  if (hit_dipole(xt,yt)) then
 	    hSTOP_D1_in = hSTOP_D1_in + 1
+	    hSTOP_id = 23
 	    goto 500
 	  endif
 
@@ -358,6 +378,7 @@ C------------------------------------------------------------------------------C
 	  call rotate_haxis(6.0e0,xt,yt)
 	  if (hit_dipole(xt,yt)) then
 	    hSTOP_D1_out = hSTOP_D1_out + 1
+	    hSTOP_id = 31
 	    goto 500
 	  endif
 
@@ -367,6 +388,7 @@ C------------------------------------------------------------------------------C
 	  if ( (((xt-x_offset_pipes)**2+(yt-y_offset_pipes)**2).gt.30.48**2)
      >           .or. (abs((yt-y_offset_pipes)).gt.20.5232) ) then
 	    hSTOP_D1_out = hSTOP_D1_out + 1
+	    hSTOP_id = 32
 	    goto 500
 	  endif
 
@@ -376,6 +398,7 @@ C------------------------------------------------------------------------------C
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if (((xs-x_offset_pipes)**2+(ys-y_offset_pipes)**2).gt.1145.518)then
 	    hSTOP_D1_out = hSTOP_D1_out + 1
+1	    hSTOP_id = 33
 	    goto 500
 	  endif
 
@@ -387,6 +410,7 @@ C------------------------------------------------------------------------------C
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if (((xs-x_offset_pipes)**2+(ys-y_offset_pipes)**2).gt.1512.2299)then
 	    hSTOP_D1_out = hSTOP_D1_out + 1
+	    hSTOP_id = 34
 	    goto 500
 	  endif
 
@@ -396,6 +420,7 @@ C------------------------------------------------------------------------------C
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
 	  if (((xs-x_offset_pipes)**2+(ys-y_offset_pipes)**2).gt.2162.9383)then
 	    hSTOP_D1_out = hSTOP_D1_out + 1
+	    hSTOP_id = 35
 	    goto 500
 	  endif
 
