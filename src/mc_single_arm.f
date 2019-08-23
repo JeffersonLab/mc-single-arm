@@ -124,16 +124,19 @@ C using SIMC unstructured version
 C
 C SHMS
 	shmsSTOP_trials	= 0
+        shmsSTOP_targ_hor	= 0
+        shmsSTOP_targ_vert	= 0
+        shmsSTOP_targ_oct	= 0
+        shmsSTOP_FRONTSLIT_hor	= 0
+        shmsSTOP_FRONTSLIT_vert	= 0
 	shmsSTOP_HB_in	= 0
         shmsSTOP_HB_men = 0
 	shmsSTOP_HB_mex	= 0
 	shmsSTOP_HB_out	= 0	
-	shmsSTOP_targ_hor	= 0
-	shmsSTOP_targ_vert	= 0
-	shmsSTOP_targ_oct	= 0
-	shmsSTOP_slit_hor	= 0
-	shmsSTOP_slit_vert	= 0
-	shmsSTOP_slit_oct	= 0
+	shmsSTOP_DOWNSLIT	= 0
+	shmsSTOP_COLL_hor	= 0
+	shmsSTOP_COLL_vert	= 0
+	shmsSTOP_COLL_oct	= 0
 	shmsSTOP_Q1_in	= 0
 	shmsSTOP_Q1_men	= 0
 	shmsSTOP_Q1_mid	= 0
@@ -177,12 +180,16 @@ c	shmsSTOP_Q3_out6	= 0
 	shmsSTOP_s3	= 0
 	shmsSTOP_cal	= 0
 	shmsSTOP_successes	= 0
-	stop_id = 0
+	shmsSTOP_id = 0
 C HMS
 	hSTOP_trials	= 0
-	hSTOP_slit_hor	= 0
-	hSTOP_slit_vert	= 0
-	hSTOP_slit_oct	= 0
+	hSTOP_fAper_hor	= 0
+	hSTOP_fAper_vert= 0
+	hSTOP_fAper_oct	= 0
+	hSTOP_bAper_hor	= 0
+	hSTOP_bAper_vert= 0
+	hSTOP_bAper_oct	= 0
+	hSTOP_slit	= 0
 	hSTOP_Q1_in	= 0
 	hSTOP_Q1_mid	= 0
 	hSTOP_Q1_out	= 0
@@ -194,12 +201,17 @@ C HMS
 	hSTOP_Q3_out	= 0
 	hSTOP_D1_in	= 0
 	hSTOP_D1_out	= 0
+	hSTOP_VP1	= 0
+	hSTOP_VP2	= 0
+	hSTOP_VP3	= 0
+	hSTOP_VP4	= 0
 	hSTOP_hut	= 0
 	hSTOP_dc1	= 0
 	hSTOP_dc2	= 0
 	hSTOP_scin	= 0
 	hSTOP_cal	= 0
 	hSTOP_successes	= 0
+	hSTOP_id        = 0
 
 C Open setup file.
 
@@ -643,7 +655,7 @@ c
      >          pathlen, 5)
 
 	     if (spec_ntuple) then
-		shms_spec(58) = stop_id
+		shms_spec(58) = shmsSTOP_id
 c            if (ok_spec) spec(58) =1.
 		call hfn(1412,shms_spec)
 	     endif
@@ -705,7 +717,7 @@ C for spectrometer ntuples
 		  shms_hut(19)= xc_frsieve
 		  shms_hut(20)= yc_frsieve
 	       endif
-	       shms_hut(21)= stop_id
+	       shms_hut(21)= shmsSTOP_id
 	       shms_hut(22)= x
 	       shms_hut(23)= y
 	       call hfn(1411,shms_hut)
@@ -736,11 +748,7 @@ C for spectrometer ntuples
 		  hms_hut(19)= xc_sieve
 		  hms_hut(20)= yc_sieve
 	       endif
-	       if(ok_spec) then
-		  hms_hut(21)= 0
-	       else
-		  hms_hut(21)=99
-	       endif
+               hms_hut(21)=hSTOP_id
 	       hms_hut(22)= x
 	       hms_hut(23)= y
 	       call hfn(1,hms_hut)
@@ -786,20 +794,22 @@ C Close NTUPLE file.
 C Indicate where particles are lost in spectrometer.
 	if(ispec.eq.2) then
 	   write (chanout,1015)
-     >	   shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct,
-     >	   shmsSTOP_slit_hor,shmsSTOP_slit_vert,shmsSTOP_slit_oct,
-     >	   shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex,
-     >     shmsSTOP_HB_out,shmsSTOP_Q1_in,shmsSTOP_Q1_men,
-     >     shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out,
-     >	   shmsSTOP_Q2_in,shmsSTOP_Q2_men,shmsSTOP_Q2_mid,
-     >     shmsSTOP_Q2_mex,shmsSTOP_Q2_out,
-     >     shmsSTOP_Q3_in,shmsSTOP_Q3_men,shmsSTOP_Q3_mid,
-     >     shmsSTOP_Q3_mex,shmsSTOP_Q3_out,
-     >	   shmsSTOP_D1_in,shmsSTOP_D1_flr,shmsSTOP_D1_men,
-     >     shmsSTOP_D1_mid1,shmsSTOP_D1_mid2,shmsSTOP_D1_mid3,
-     >     shmsSTOP_D1_mid4,shmsSTOP_D1_mid5,shmsSTOP_D1_mid6,
-     >     shmsSTOP_D1_mid7,shmsSTOP_D1_mex,shmsSTOP_D1_out,
-     >     shmsSTOP_BP_in, shmsSTOP_BP_out
+     >        shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct,
+     >        shmsSTOP_FRONTSLIT_hor,shmsSTOP_FRONTSLIT_vert,
+     >        shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex,
+     >        shmsSTOP_HB_out,shmsSTOP_DOWNSLIT,
+     >        shmsSTOP_COLL_hor,shmsSTOP_COLL_vert,shmsSTOP_COLL_oct,
+     >        shmsSTOP_Q1_in,shmsSTOP_Q1_men,
+     >        shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out,
+     >        shmsSTOP_Q2_in,shmsSTOP_Q2_men,shmsSTOP_Q2_mid,
+     >        shmsSTOP_Q2_mex,shmsSTOP_Q2_out,
+     >        shmsSTOP_Q3_in,shmsSTOP_Q3_men,shmsSTOP_Q3_mid,
+     >        shmsSTOP_Q3_mex,shmsSTOP_Q3_out,
+     >        shmsSTOP_D1_in,shmsSTOP_D1_flr,shmsSTOP_D1_men,
+     >        shmsSTOP_D1_mid1,shmsSTOP_D1_mid2,shmsSTOP_D1_mid3,
+     >        shmsSTOP_D1_mid4,shmsSTOP_D1_mid5,shmsSTOP_D1_mid6,
+     >        shmsSTOP_D1_mid7,shmsSTOP_D1_mex,shmsSTOP_D1_out,
+     >        shmsSTOP_BP_in, shmsSTOP_BP_out
 
 	   write (chanout,1006)
      >	   shmsSTOP_trials,shmsSTOP_hut,shmsSTOP_dc1,shmsSTOP_dc2,
@@ -808,11 +818,14 @@ C Indicate where particles are lost in spectrometer.
 
 	elseif(ispec.eq.1) then
 	   write (chanout,1016)
-     >	   hSTOP_slit_hor,hSTOP_slit_vert,hSTOP_slit_oct,
-     >	   hSTOP_Q1_in,hSTOP_Q1_mid,hSTOP_Q1_out,
-     >	   hSTOP_Q2_in,hSTOP_Q2_mid,hSTOP_Q2_out,
-     >	   hSTOP_Q3_in,hSTOP_Q3_mid,hSTOP_Q3_out,
-     >	   hSTOP_D1_in,hSTOP_D1_out
+     >        hSTOP_fAper_hor,hSTOP_fAper_vert,hSTOP_fAper_oct,
+     >        hSTOP_bAper_hor,hSTOP_bAper_vert,hSTOP_bAper_oct,
+     >        hSTOP_slit,
+     >        hSTOP_Q1_in,hSTOP_Q1_mid,hSTOP_Q1_out,
+     >        hSTOP_Q2_in,hSTOP_Q2_mid,hSTOP_Q2_out,
+     >        hSTOP_Q3_in,hSTOP_Q3_mid,hSTOP_Q3_out,
+     >        hSTOP_D1_in,hSTOP_D1_out,
+     >        hSTOP_VP1,hSTOP_VP2,hSTOP_VP3,hSTOP_VP4
 
 	   write (chanout,1007)
      >	   hSTOP_trials,hSTOP_hut,hSTOP_dc1,hSTOP_dc2,hSTOP_scin,hSTOP_cal,
@@ -907,63 +920,74 @@ C =============================== Format Statements ============================
 1012	format(1x,16i4)
 
 1015	format(/,
-     >  i11,' stopped in the TARG APERT HOR',/
-     >  i11,' stopped in the TARG APERT VERT',/
-     >  i11,' stopped in the TARG APERT OCTAGON',/
-     >  i11,' stopped in the FIXED SLIT HOR',/
-     >  i11,' stopped in the FIXED SLIT VERT',/
-     >  i11,' stopped in the FIXED SLIT OCTAGON',/
-     >  i11,' stopped in HB ENTRANCE',/
-     >  i11,' stopped in HB MAG ENTRANCE',/
-     >  i11,' stopped in HB MAG EXIT',/
-     >  i11,' stopped in HB EXIT',/
-     >  i11,' stopped in Q1 ENTRANCE',/
-     >  i11,' stopped in Q1 MAG ENTRANCE',/
-     >  i11,' stopped in Q1 MIDPLANE',/
-     >  i11,' stopped in Q1 MAG EXIT',/
-     >  i11,' stopped in Q1 EXIT',/
-     >  i11,' stopped in Q2 ENTRANCE',/
-     >  i11,' stopped in Q2 MAG ENTRANCE',/
-     >  i11,' stopped in Q2 MIDPLANE',/
-     >  i11,' stopped in Q2 MAG EXIT',/
-     >  i11,' stopped in Q2 EXIT',/
-     >  i11,' stopped in Q3 ENTRANCE',/
-     >  i11,' stopped in Q3 MAG ENTRANCE',/
-     >  i11,' stopped in Q3 MIDPLANE',/
-     >  i11,' stopped in Q3 MAG EXIT',/
-     >  i11,' stopped in Q3 EXIT',/
-     >  i11,' stopped in D1 ENTRANCE',/
-     >  i11,' stopped in D1 FLARE',/
-     >  i11,' stopped in D1 MAG ENTRANCE',/
-     >  i11,' stopped in D1 MID-1',/
-     >  i11,' stopped in D1 MID-2',/
-     >  i11,' stopped in D1 MID-3',/
-     >  i11,' stopped in D1 MID-4',/
-     >  i11,' stopped in D1 MID-5',/
-     >  i11,' stopped in D1 MID-6',/
-     >  i11,' stopped in D1 MID-7',/
-     >  i11,' stopped in D1 MAG EXIT',/
-     >  i11,' stopped in D1 EXIT',/
-     >  i11,' stopped in BP ENTRANCE',/
-     >  i11,' stopped in BP EXIT',/
-     >  )
+     >     i11,' stopped in the TARG APERT HOR',/
+     >     i11,' stopped in the TARG APERT VERT',/
+     >     i11,' stopped in the TARG APERT OCTAGON',/
+     >     i11,' stopped in the FIXED FRONT SLIT HOR (id=-1)',/
+     >     i11,' stopped in the FIXED FRONT SLIT VERT (id=-1)',/
+     >     i11,' stopped in HB ENTRANCE (id=1)',/
+     >     i11,' stopped in HB MAG ENTRANCE (id=2)',/
+     >     i11,' stopped in HB MAG EXIT (id=3)',/
+     >     i11,' stopped in HB EXIT (id=4)',/
+     >     i11,' stopped in the DOWN SIEVE SLIT (id=99)',/
+     >     i11,' stopped in the COLLIMATOR HOR (id=5)',/
+     >     i11,' stopped in the COLLIMATOR VERT (id=5)',/
+     >     i11,' stopped in the COLLIMATOR OCTAGON (id=5)',/
+     >     i11,' stopped in Q1 ENTRANCE (id=6)',/
+     >     i11,' stopped in Q1 MAG ENTRANCE (id=7)',/
+     >     i11,' stopped in Q1 MIDPLANE (id=8)',/
+     >     i11,' stopped in Q1 MAG EXIT (id=9)',/
+     >     i11,' stopped in Q1 EXIT (id=10)',/
+     >     i11,' stopped in Q2 ENTRANCE (id=11)',/
+     >     i11,' stopped in Q2 MAG ENTRANCE (id=12)',/
+     >     i11,' stopped in Q2 MIDPLANE (id=13)',/
+     >     i11,' stopped in Q2 MAG EXIT (id=14)',/
+     >     i11,' stopped in Q2 EXIT (id=15)',/
+     >     i11,' stopped in Q3 ENTRANCE (id=16)',/
+     >     i11,' stopped in Q3 MAG ENTRANCE (id=17)',/
+     >     i11,' stopped in Q3 MIDPLANE (id=18)',/
+     >     i11,' stopped in Q3 MAG EXIT (id=19)',/
+     >     i11,' stopped in Q3 EXIT (id=20)',/
+     >     i11,' stopped in D1 ENTRANCE (id=21)',/
+     >     i11,' stopped in D1 FLARE (id=22)',/
+     >     i11,' stopped in D1 MAG ENTRANCE (id=23)',/
+     >     i11,' stopped in D1 MID-1 (id=24)',/
+     >     i11,' stopped in D1 MID-2 (id=25)',/
+     >     i11,' stopped in D1 MID-3 (id=26)',/
+     >     i11,' stopped in D1 MID-4 (id=27)',/
+     >     i11,' stopped in D1 MID-5 (id=28)',/
+     >     i11,' stopped in D1 MID-6 (id=29)',/
+     >     i11,' stopped in D1 MID-7 (id=30)',/
+     >     i11,' stopped in D1 MAG EXIT (id=31)',/
+     >     i11,' stopped in D1 EXIT (id=32)',/
+     >     i11,' stopped in BP ENTRANCE',/
+     >     i11,' stopped in BP EXIT',/
+     >     )
 
- 1016	format(/,
-     >  i11,' stopped in the FIXED SLIT HOR',/
-     >  i11,' stopped in the FIXED SLIT VERT',/
-     >  i11,' stopped in the FIXED SLIT OCTAGON',/
-     >  i11,' stopped in Q1 ENTRANCE',/
-     >  i11,' stopped in Q1 MIDPLANE',/
-     >  i11,' stopped in Q1 EXIT',/
-     >  i11,' stopped in Q2 ENTRANCE',/
-     >  i11,' stopped in Q2 MIDPLANE',/
-     >  i11,' stopped in Q2 EXIT',/
-     >  i11,' stopped in Q3 ENTRANCE',/
-     >  i11,' stopped in Q3 MIDPLANE',/
-     >  i11,' stopped in Q3 EXIT',/
-     >  i11,' stopped in D1 ENTRANCE',/
-     >  i11,' stopped in D1 EXIT',/
-     >  )
+ 1016 format(/,
+     >     i11,' stopped in the Front-end Aperture HOR (id=5)',/
+     >     i11,' stopped in the Front-end Aperture VERT (id=5)',/
+     >     i11,' stopped in the Front-end Aperture OCTAGON (id=5)',/
+     >     i11,' stopped in the Back-end Aperture HOR (id=6)',/
+     >     i11,' stopped in the Back-end Aperture VERT (id=6)',/
+     >     i11,' stopped in the Back-end Aperture OCTAGON (id=6)',/
+     >     i11,' stopped in Sieve Slit (id=99)',/
+     >     i11,' stopped in Q1 MAG ENTRANCE (id=7)',/
+     >     i11,' stopped in Q1 MIDPLANE (id=8)',/
+     >     i11,' stopped in Q1 MAG EXIT (id=9)',/
+     >     i11,' stopped in Q2 MAG ENTRANCE (id=12)',/
+     >     i11,' stopped in Q2 MIDPLANE (id=13)',/
+     >     i11,' stopped in Q2 MAG EXIT (id=14)',/
+     >     i11,' stopped in Q3 MAG ENTRANCE (id=17)',/
+     >     i11,' stopped in Q3 MIDPLANE (id=18)',/
+     >     i11,' stopped in Q3 MAG EXIT (id=19)',/
+     >     i11,' stopped in D1 ENTRANCE (id=23)',/
+     >     i11,' stopped in D1 EXIT (id=31)',/
+     >     i11,' stopped in Vacuum Pipe Plane-1 (id=32)',/
+     >     i11,' stopped in Vacuum Pipe Plane-2 (id=33)',/
+     >     i11,' stopped in Vacuum Pipe Plane-3 (id=34)',/
+     >     i11,' stopped in Vacuum Pipe Plane-4 (id=35)',/
+     >     )
 
 1100	format('!',79('-'),/,'! ',a,/,'!')
 1200	format(/,'! ',a,' Coefficients',/,/,

@@ -251,7 +251,7 @@ C ================================ Executable Code =============================
 
 
 ! Initialize ok_spec to false
-	stop_id = 0
+	shmsSTOP_id = 0
 	ok_spec = .false.
 	dflag = .false.
 	shmsSTOP_trials = shmsSTOP_trials + 1
@@ -359,7 +359,7 @@ c sieve in front of HB
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBfyp).or.
      >        (yt.lt.r_HBfym)) then
 	      shmsSTOP_HB_in = shmsSTOP_HB_in + 1
-	      stop_id = 1 
+	      shmsSTOP_id = 1 
 	      goto 500
 	   endif
            spec(1)=xt
@@ -377,7 +377,7 @@ c sieve in front of HB
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBmenyp).or.
      >        (yt.lt.r_HBmenym)) then
 	      shmsSTOP_HB_men = shmsSTOP_HB_men + 1
-	      stop_id = 2
+	      shmsSTOP_id = 2
               ev_lost = 2 
 	      goto 500
 	   endif
@@ -396,7 +396,7 @@ c sieve in front of HB
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBmexyp).or.
      >        (yt.lt.r_HBmexym)) then
   	      shmsSTOP_HB_mex = shmsSTOP_HB_mex + 1
-	      stop_id = 3
+	      shmsSTOP_id = 3
               ev_lost = 3 
 	      goto 500
 	   endif
@@ -415,7 +415,7 @@ c sieve in front of HB
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBbyp).or.
      >        (yt.lt.r_HBbym)) then
 	      shmsSTOP_HB_out = shmsSTOP_HB_out + 1
-	      stop_id = 4 
+	      shmsSTOP_id = 4 
               ev_lost = 4
 	      goto 500
 	   endif
@@ -457,18 +457,18 @@ c           tpathlen=pathlen
            yt=ys + zdrift*dydzs
 c	   call project(xt,yt,zdrift,decay_flag,dflag,m2,p,pathlen) !project 
  	   if (abs(yt-y_off).gt.h_entr) then
-	      shmsSTOP_slit_hor = shmsSTOP_slit_hor + 1
-	      stop_id = 5
+	      shmsSTOP_COLL_hor = shmsSTOP_COLL_hor + 1
+	      shmsSTOP_id = 5
 	      goto 500
 	   endif
 	   if (abs(xt-x_off).gt.v_entr) then
-	      shmsSTOP_slit_vert = shmsSTOP_slit_vert + 1
-	      stop_id = 5
+	      shmsSTOP_COLL_vert = shmsSTOP_COLL_vert + 1
+	      shmsSTOP_id = 5
 	      goto 500
 	   endif
 	   if (abs(xt-x_off).gt. (-v_entr/h_entr*abs(yt-y_off)+3*v_entr/2)) then
-      	      shmsSTOP_slit_oct = shmsSTOP_slit_oct + 1
-	      stop_id = 5
+      	      shmsSTOP_COLL_oct = shmsSTOP_COLL_oct + 1
+	      shmsSTOP_id = 5
 	      goto 500
 	   endif
 
@@ -479,18 +479,18 @@ c	   call project(xt,yt,zdrift,decay_flag,dflag,m2,p,pathlen) !project
            yt=yt + zdrift*dydzs
 c	   call project(xt,yt,zdrift,decay_flag,dflag,m2,p,pathlen) !project 
 	   if (abs(yt-y_off).gt.(h_exit+0.8)) then
-	      shmsSTOP_slit_hor = shmsSTOP_slit_hor + 1
-	      stop_id = 5
+	      shmsSTOP_COLL_hor = shmsSTOP_COLL_hor + 1
+	      shmsSTOP_id = 5
 	      goto 500
 	   endif
 	   if (abs(xt-x_off).gt.(v_exit+0.8)) then
-	      shmsSTOP_slit_vert = shmsSTOP_slit_vert + 1
-	      stop_id = 5
+	      shmsSTOP_COLL_vert = shmsSTOP_COLL_vert + 1
+	      shmsSTOP_id = 5
 	      goto 500
 	   endif
 	   if (abs(xt-x_off).gt. ((-v_exit-0.8)/(h_exit+0.8)*abs(yt-y_off)+3*(v_exit+0.8)/2)) then
-	      shmsSTOP_slit_oct = shmsSTOP_slit_oct + 1
-	      stop_id = 5
+	      shmsSTOP_COLL_oct = shmsSTOP_COLL_oct + 1
+	      shmsSTOP_id = 5
 	      goto 500
      	   endif
            spec(56)=xt
@@ -506,7 +506,7 @@ c           pathlen=tpathlen
            y_q1_in = ys
 	   if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	      shmsSTOP_Q1_in = shmsSTOP_Q1_in + 1
-	      stop_id = 6
+	      shmsSTOP_id = 6
 	      goto 500
 	   endif
            spec(9)=xs
@@ -520,7 +520,7 @@ c           pathlen=tpathlen
            y_q1_men = ys
 	   if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	      shmsSTOP_Q1_men = shmsSTOP_Q1_men + 1
-	      stop_id = 7
+	      shmsSTOP_id = 7
 	      goto 500
 	   endif
 
@@ -531,7 +531,7 @@ c           pathlen=tpathlen
 	      y_q1_mid=ys
 	      if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 		 shmsSTOP_Q1_mid = shmsSTOP_Q1_mid + 1
-		 stop_id = 8
+		 shmsSTOP_id = 8
 		 goto 500
 	      endif
 
@@ -542,7 +542,7 @@ c           pathlen=tpathlen
            y_q1_mex = ys
 	   if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	      shmsSTOP_Q1_mex = shmsSTOP_Q1_mex + 1
-	      stop_id = 9
+	      shmsSTOP_id = 9
 	      goto 500
 	   endif
 
@@ -553,7 +553,7 @@ c           pathlen=tpathlen
 	      y_q1_out=ys
 	      if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 		 shmsSTOP_Q1_out = shmsSTOP_Q1_out + 1
-		 stop_id = 10
+		 shmsSTOP_id = 10
 		 goto 500
 	      endif
 
@@ -564,7 +564,7 @@ c           pathlen=tpathlen
            y_q2_in = ys
 	   if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	      shmsSTOP_Q2_in = shmsSTOP_Q2_in + 1
-	      stop_id = 11
+	      shmsSTOP_id = 11
 	      goto 500
 	   endif
            spec(11)=xs
@@ -577,7 +577,7 @@ c           pathlen=tpathlen
            y_q2_men = ys
 	   if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	      shmsSTOP_Q2_men = shmsSTOP_Q2_men + 1
-	      stop_id = 12
+	      shmsSTOP_id = 12
 	      goto 500
 	   endif
 
@@ -588,7 +588,7 @@ c           pathlen=tpathlen
 	      y_q2_mid=ys
 	      if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 		 shmsSTOP_Q2_mid = shmsSTOP_Q2_mid + 1
-		 stop_id = 13
+		 shmsSTOP_id = 13
 		 goto 500
 	      endif
 
@@ -599,7 +599,7 @@ c           pathlen=tpathlen
            y_q2_mex = ys
 	   if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	      shmsSTOP_Q2_mex = shmsSTOP_Q2_mex + 1
-	      stop_id = 14
+	      shmsSTOP_id = 14
 	      goto 500
 	   endif
 
@@ -610,7 +610,7 @@ c           pathlen=tpathlen
 	      y_q2_out=ys
 	      if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 		 shmsSTOP_Q2_out = shmsSTOP_Q2_out + 1
-		 stop_id = 15
+		 shmsSTOP_id = 15
 		 goto 500
 	      endif
 
@@ -621,7 +621,7 @@ c           pathlen=tpathlen
            y_q3_in = ys
 	   if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	      shmsSTOP_Q3_in = shmsSTOP_Q3_in + 1
-	      stop_id = 16
+	      shmsSTOP_id = 16
 	      goto 500
 	   endif
            spec(13)=xs
@@ -634,7 +634,7 @@ c           pathlen=tpathlen
            y_q3_men = ys
 	   if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	      shmsSTOP_Q3_men = shmsSTOP_Q3_men + 1
-	      stop_id = 17
+	      shmsSTOP_id = 17
 	      goto 500
 	   endif
 
@@ -645,7 +645,7 @@ c           pathlen=tpathlen
 	      y_q3_mid=ys
 	      if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 		 shmsSTOP_Q3_mid = shmsSTOP_Q3_mid + 1
-		 stop_id = 18
+		 shmsSTOP_id = 18
 		 goto 500
 	      endif
 
@@ -656,7 +656,7 @@ c           pathlen=tpathlen
            y_q3_mex = ys
 	   if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	      shmsSTOP_Q3_mex = shmsSTOP_Q3_mex + 1
-	      stop_id = 19
+	      shmsSTOP_id = 19
 	      goto 500
 	   endif
 
@@ -667,7 +667,7 @@ c           pathlen=tpathlen
 	      y_q3_out=ys
 	      if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 		 shmsSTOP_Q3_out = shmsSTOP_Q3_out + 1
-		 stop_id = 20
+		 shmsSTOP_id = 20
 		 goto 500
 	      endif
 
@@ -726,7 +726,7 @@ c           pathlen=tpathlen
 	      y_d_in=ys
 	      if ((xs*xs + ys*ys).gt.r_D1*r_D1) then
 		 shmsSTOP_D1_in = shmsSTOP_D1_in + 1
-		 stop_id = 21
+		 shmsSTOP_id = 21
 		 goto 500
 	      endif
 	      spec(15)=xs
@@ -745,7 +745,7 @@ c           pathlen=tpathlen
 	   y_d_flr=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_flr = shmsSTOP_D1_flr + 1
-	      stop_id =22
+	      shmsSTOP_id =22
 	      goto 500
 	   endif
 	   spec(17)=xt
@@ -764,7 +764,7 @@ c           pathlen=tpathlen
 	   y_d_men=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_men = shmsSTOP_D1_men + 1
-	      stop_id =23
+	      shmsSTOP_id =23
 	      goto 500
 	   endif
 	   spec(19)=xt
@@ -783,7 +783,7 @@ c           pathlen=tpathlen
 	   y_d_m1=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid1 = shmsSTOP_D1_mid1 + 1
-	      stop_id=24
+	      shmsSTOP_id=24
 	      goto 500
 	   endif
 	   spec(21)=xt
@@ -802,7 +802,7 @@ c           pathlen=tpathlen
 	   y_d_m2=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid2 = shmsSTOP_D1_mid2 + 1
-	      stop_id=25
+	      shmsSTOP_id=25
 	      goto 500
 	   endif
 	   spec(23)=xt
@@ -819,7 +819,7 @@ c           pathlen=tpathlen
 	   y_d_m3=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid3 = shmsSTOP_D1_mid3 + 1
-	      stop_id=26
+	      shmsSTOP_id=26
 	      goto 500
  	   endif
 	   spec(25)=xt
@@ -837,7 +837,7 @@ c           pathlen=tpathlen
 	   y_d_m4=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid4 = shmsSTOP_D1_mid4 + 1
-	      stop_id=27
+	      shmsSTOP_id=27
 	      goto 500
 	   endif
 	   spec(27)=xt
@@ -854,7 +854,7 @@ c           pathlen=tpathlen
 	   y_d_m5=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid5 = shmsSTOP_D1_mid5 + 1
-	      stop_id=28
+	      shmsSTOP_id=28
 	      goto 500
 	   endif
 	   spec(29)=xt
@@ -871,7 +871,7 @@ c           pathlen=tpathlen
 	   y_d_m6=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid6 = shmsSTOP_D1_mid6 + 1
-	      stop_id=29
+	      shmsSTOP_id=29
 	      goto 500
 	   endif
 	   spec(31)=xt
@@ -888,7 +888,7 @@ c           pathlen=tpathlen
 	   y_d_m7=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid7 = shmsSTOP_D1_mid7 + 1
-	      stop_id=30
+	      shmsSTOP_id=30
 	      goto 500
 	   endif
 	   spec(33)=xt
@@ -908,7 +908,7 @@ c           pathlen=tpathlen
 	   y_d_mex=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mex = shmsSTOP_D1_mex + 1
-	      stop_id =31
+	      shmsSTOP_id =31
 	      goto 500
 	   endif
 	   spec(35)=xt
@@ -926,7 +926,7 @@ c           pathlen=tpathlen
 	   y_d_out=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_out = shmsSTOP_D1_out + 1
-	      stop_id=32
+	      shmsSTOP_id=32
 	      goto 500
 	   endif
            spec(37)=xt
@@ -955,7 +955,7 @@ C and track through the detector hut
      >		decay_flag,dflag,resmult,spec,
      >          ok_hut,0.0,pathlen,spectr)
 	   if (.not. ok_hut) then
-	      stop_id=33
+	      shmsSTOP_id=33
 	      goto 500
 	   endif
 
