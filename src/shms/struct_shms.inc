@@ -5,7 +5,7 @@
       integer*4 shmsSTOP_targ_hor,shmsSTOP_targ_vert,shmsSTOP_targ_oct
       integer*4 shmsSTOP_FRONTSLIT_hor,shmsSTOP_FRONTSLIT_vert
       integer*4 shmsSTOP_HB_in,shmsSTOP_HB_men,shmsSTOP_HB_mex
-      integer*4 shmsSTOP_HB_out,shmsSTOP_DOWNSLIT
+      integer*4 shmsSTOP_HB_out,shmsSTOP_DOWNSLIT, shmsSTOP_FRONTSLIT
       integer*4 shmsSTOP_COLL_hor,shmsSTOP_COLL_vert,shmsSTOP_COLL_oct
       integer*4 shmsSTOP_Q1_in,shmsSTOP_Q1_men
       integer*4 shmsSTOP_Q1_mid,shmsSTOP_Q1_mex,shmsSTOP_Q1_out

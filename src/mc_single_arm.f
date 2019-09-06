@@ -418,8 +418,9 @@ C Strip off header
      > stop 'ERROR: use_sieve in setup file!'
 	if (tmp_int.eq.1) then
 	  if (ispec.eq.1) use_sieve=.true.
-	  if (ispec.eq.2) use_front_sieve=.true.
-        endif
+	  if (ispec.eq.2) use_sieve=.true.
+	  if (ispec.eq.2) use_front_sieve=.false.
+	endif
 
 !     Read in flag for 'target atomic number (Z+N)' for elastic event if present
       read (chanin,1001,end=1000,err=1000) str_line
@@ -716,6 +717,12 @@ C for spectrometer ntuples
 		  shms_hut(18)= ysfr_num
 		  shms_hut(19)= xc_frsieve
 		  shms_hut(20)= yc_frsieve
+	       endif
+	       if (use_sieve) then
+		  shms_hut(17)= xs_num
+		  shms_hut(18)= ys_num
+		  shms_hut(19)= xc_sieve
+		  shms_hut(20)= yc_sieve
 	       endif
 	       shms_hut(21)= shmsSTOP_id
 	       shms_hut(22)= x

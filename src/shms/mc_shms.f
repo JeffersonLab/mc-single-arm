@@ -65,6 +65,7 @@ c        logical use_coll /.false./ ! use collimator
         common /shms_flags/ spec_ntuple
         logical skip_hb /.false./
 c
+        real*8 sieve_hole_r !sieve hole radius
 	real*8 xs_num,ys_num,xc_sieve,yc_sieve
 	real*8 xt_bs, yt_bs, sieve_tk
 	real*8 xsfr_num,ysfr_num,xc_frsieve,yc_frsieve
@@ -310,11 +311,13 @@ c sieve in front of HB
   	   zdrift = zd_fr_sieve
            xt=xs + zdrift*dxdzs
            yt=ys + zdrift*dydzs
-           xsfr_num=anint(xt/1.1)
-           ysfr_num=anint(yt/0.9)
-           xc_frsieve=1.1*xsfr_num
-           yc_frsieve=0.9*ysfr_num
+           xsfr_num=anint(xt/2.2)
+           ysfr_num=anint(yt/1.8)
+           xc_frsieve=2.2*xsfr_num
+           yc_frsieve=1.8*ysfr_num
            if ( sqrt((xc_frsieve - xt)**2+(yc_frsieve - yt)**2) .gt. 0.15) then
+	      shmsSTOP_FRONTSLIT = shmsSTOP_FRONTSLIT + 1
+	      shmsSTOP_id = 99
               goto 500
            endif
 	   xc_frsieve=xt
@@ -323,6 +326,8 @@ c sieve in front of HB
            xt=xs + zdrift*dxdzs
            yt=ys + zdrift*dydzs
            if ( sqrt((xc_frsieve - xt)**2+(yc_frsieve - yt)**2) .gt. 0.15) then
+	      shmsSTOP_FRONTSLIT = shmsSTOP_FRONTSLIT + 1
+	      shmsSTOP_id = 99
               goto 500
            endif
           endif
@@ -432,18 +437,31 @@ c sieve in front of HB
            ys_num=anint(yt/1.64)
            xc_sieve=2.5*xs_num
            yc_sieve=1.64*ys_num
-           if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. 0.3) then
+! Check hole number to determine hole size            
+	   if((ys_num.eq.0 .and. xs_num.eq.0) .or. (ys_num.eq.-3 .and. xs_num.eq.-2)) then
+           sieve_hole_r = 0.15
+           else if((ys_num.eq.3 .and. xs_num.eq.1) .or. (ys_num.eq.-1 .and. xs_num.eq.-1)) then
+           sieve_hole_r = 0.0
+           else  
+           sieve_hole_r = 0.30
+           endif
+
+         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. sieve_hole_r) then
+	      shmsSTOP_DOWNSLIT = shmsSTOP_DOWNSLIT + 1
+	      shmsSTOP_id = 99
               goto 500
            endif
 
 ! Check at back of sieve
            xt_bs = xt + sieve_tk*dxdzs
            yt_bs = yt + sieve_tk*dydzs
-	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. 0.3) then
+	   if ( sqrt((xc_sieve - xt_bs)**2+(yc_sieve - yt_bs)**2) .gt. sieve_hole_r) then
+	      shmsSTOP_DOWNSLIT = shmsSTOP_DOWNSLIT + 1
+	      shmsSTOP_id = 99
 	      goto 500
 	   endif
 
-! Save pos. at front of sieve
+! Reuse var. to save pos. at front of sieve
 	   xc_sieve = xt
 	   yc_sieve = yt
 	endif
