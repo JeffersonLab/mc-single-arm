@@ -66,22 +66,8 @@ C First time through, read in coefficients from data file.
 	   if (.not.locforunt(chan)) 
      >         stop 'MC_SHMS_RECON: No I/O channels!'
 	   if (spectr.eq.5) then	!ssa tune
-! COSY calculated (not so great!!!)
-c	     open (unit=chan,status='old',file='shms/shms_hsa_2009_recon_cosy_daveme2.dat')
-c	     open (unit=chan,status='old',file='shms/shms_recon_cosy_2011_dipole26cm_dm1.2_nov9.dat')
-c	     open (unit=chan,status='old',file='shms/shms_recon_refit_5th_order.dat')
-c	     open (unit=chan,status='old',file='shms/shms_recon_fit_90deg_1cm_5th_order.dat')
-c	     open (unit=chan,status='old',file='shms/shms-2011-26cm-monte_ideal_6ord_recon.dat')
              open (unit=chan,status='old',
-     >       file='shms/shms-2017-26cm-monte_quads_p18_recon.dat')
-c	     open (unit=chan,status='old',file='shms/shms_hsa_2009_recon_cosy.dat')
-! CMOP REFIT
-c	     open (unit=chan,status='old',file=
-c     >'shms/cmop_refit_shms_lq_qdi_hsa_split_recon_newfit_4thorder.dat')
-! TH new optics
-!	     open (unit=chan,status='old',
-!     > file='shms/shms2008_rec_th.dat')
-!     > file='shms/shms2008_rec_th_pmag7.dat')
+     >       file='shms/shms_recon.dat')
 	   else if (spectr.eq.6) then	!lsa tune
 	      write(6,*) 'mc_shms_recon: 
      >You are trying to use the LSA: no banana!'
