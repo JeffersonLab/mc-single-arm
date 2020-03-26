@@ -58,7 +58,7 @@ C Math constants
 C	logical use_front_sieve /.false./ 
 c 	logical use_sieve /.true./ 
 c        logical use_coll /.false./ ! use collimator
-        logical use_coll /.false./ ! use collimator, set to false if using sieve
+        logical use_coll /.true./ ! use collimator, set to false if using sieve
 !        logical*4 spec_ntuple   /.true./
 !        logical skip_hb /.true./
         logical*4 spec_ntuple  
@@ -346,7 +346,6 @@ c sieve in front of HB
 !DD:   3 Meg exit     0.98         -1.5
 !DD:   4 Mech exit    1.51         -1.5
 !DD: -------------------------------------------------
-          spec(58) = dpps
           if (skip_hb) then
            zdrift=zd_hbin+zd_hbmen+zd_hbmex+zd_hbout
            xs=xs + zdrift*dxdzs
@@ -361,16 +360,16 @@ c sieve in front of HB
 	   yt = yt + 1.51
            x_hb_in = xt
            y_hb_in = yt
+           spec(1)=xt
+            spec(2)=yt
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBfyp).or.
      >        (yt.lt.r_HBfym)) then
 	      shmsSTOP_HB_in = shmsSTOP_HB_in + 1
 	      shmsSTOP_id = 1 
 	      goto 500
 	   endif
-           spec(1)=xt
-           spec(2)=yt
-
-! Go to HB Mag entrance
+ 
+c Go to HB Mag entrance
 	   call transp(spectr,2,decay_flag,dflag,m2,p,
      >     zd_hbmen,pathlen)
 	   xt=xs
@@ -379,6 +378,8 @@ c sieve in front of HB
 	   yt = yt + 0.98
            x_hb_men = xt
            y_hb_men = yt
+           spec(3)=xt
+           spec(4)=yt
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBmenyp).or.
      >        (yt.lt.r_HBmenym)) then
 	      shmsSTOP_HB_men = shmsSTOP_HB_men + 1
@@ -386,9 +387,6 @@ c sieve in front of HB
               ev_lost = 2 
 	      goto 500
 	   endif
-           spec(3)=xt
-           spec(4)=yt
-
 ! Go to HB  Mag exit
 	   call transp(spectr,3,decay_flag,dflag,m2,p,
      >     zd_hbmex,pathlen)
@@ -398,6 +396,8 @@ c sieve in front of HB
 	   yt = yt + 0.98
            x_hb_mex = xt
            y_hb_mex = yt
+           spec(5)=xt
+           spec(6)=yt
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBmexyp).or.
      >        (yt.lt.r_HBmexym)) then
   	      shmsSTOP_HB_mex = shmsSTOP_HB_mex + 1
@@ -405,8 +405,6 @@ c sieve in front of HB
               ev_lost = 3 
 	      goto 500
 	   endif
-           spec(5)=xt
-           spec(6)=yt
 
 ! Go to HB exit
 	   call transp(spectr,4,decay_flag,dflag,m2,p,
@@ -417,6 +415,8 @@ c sieve in front of HB
 	   yt = yt + 1.51
            x_hb_out = xt
            y_hb_out = yt
+           spec(7)=xt
+           spec(8)=yt
 	   if ((xt*xt.gt.r_HBx*r_HBx).or.(yt.gt.r_HBbyp).or.
      >        (yt.lt.r_HBbym)) then
 	      shmsSTOP_HB_out = shmsSTOP_HB_out + 1
@@ -424,8 +424,6 @@ c sieve in front of HB
               ev_lost = 4
 	      goto 500
 	   endif
-           spec(7)=xt
-           spec(8)=yt
           endif
 
 	  
@@ -468,11 +466,15 @@ c sieve in front of HB
 
 !simulate collimator -------------------------------------------------
 c
+	  if ( use_sieve) use_coll = .false.
+c
           if (use_coll) then
 c           tpathlen=pathlen
   	   zdrift = z_entr
            xt=xs + zdrift*dxdzs
            yt=ys + zdrift*dydzs
+           spec(56)=xt
+           spec(57)=yt
 c	   call project(xt,yt,zdrift,decay_flag,dflag,m2,p,pathlen) !project 
  	   if (abs(yt-y_off).gt.h_entr) then
 	      shmsSTOP_COLL_hor = shmsSTOP_COLL_hor + 1
@@ -511,8 +513,6 @@ c	   call project(xt,yt,zdrift,decay_flag,dflag,m2,p,pathlen) !project
 	      shmsSTOP_id = 5
 	      goto 500
      	   endif
-           spec(56)=xt
-           spec(57)=yt
 c           pathlen=tpathlen
           endif
 ! ---------------------------------------------------------------------------
@@ -522,14 +522,14 @@ c           pathlen=tpathlen
      >     zd_q1in,pathlen)
            x_q1_in = xs
            y_q1_in = ys
+           spec(9)=xs
+           spec(10)=ys
+
 	   if ((xs*xs + ys*ys).gt.r_Q1*r_Q1) then
 	      shmsSTOP_Q1_in = shmsSTOP_Q1_in + 1
 	      shmsSTOP_id = 6
 	      goto 500
 	   endif
-           spec(9)=xs
-           spec(10)=ys
-
 
 ! Go to Q1 Mag entrance
 	   call transp(spectr,6,decay_flag,dflag,m2,p,
@@ -580,13 +580,13 @@ c           pathlen=tpathlen
      >     zd_q2in,pathlen)
            x_q2_in = xs
            y_q2_in = ys
+           spec(11)=xs
+           spec(12)=ys
 	   if ((xs*xs + ys*ys).gt.r_Q2*r_Q2) then
 	      shmsSTOP_Q2_in = shmsSTOP_Q2_in + 1
 	      shmsSTOP_id = 11
 	      goto 500
 	   endif
-           spec(11)=xs
-           spec(12)=ys
 
 ! Go to Q2 Mag entrance
 	   call transp(spectr,11,decay_flag,dflag,m2,p,
@@ -637,13 +637,13 @@ c           pathlen=tpathlen
      >     zd_q3in,pathlen)
            x_q3_in = xs
            y_q3_in = ys
+           spec(13)=xs
+           spec(14)=ys
 	   if ((xs*xs + ys*ys).gt.r_Q3*r_Q3) then
 	      shmsSTOP_Q3_in = shmsSTOP_Q3_in + 1
 	      shmsSTOP_id = 16
 	      goto 500
 	   endif
-           spec(13)=xs
-           spec(14)=ys
 
 ! Go to Q3 Mag entrance
 	   call transp(spectr,16,decay_flag,dflag,m2,p,
@@ -742,14 +742,13 @@ c           pathlen=tpathlen
      >        zd_q3d1trans,pathlen)
   	      x_d_in=xs
 	      y_d_in=ys
+	      spec(15)=xs
+	      spec(16)=ys
 	      if ((xs*xs + ys*ys).gt.r_D1*r_D1) then
 		 shmsSTOP_D1_in = shmsSTOP_D1_in + 1
 		 shmsSTOP_id = 21
 		 goto 500
 	      endif
-	      spec(15)=xs
-	      spec(16)=ys
-
 ! Go to D1 entrance flare
 ! Find intersection with rotated aperture plane.
 ! Aperture has elliptical form.
@@ -761,13 +760,13 @@ c           pathlen=tpathlen
 	   xt = xt - 3.5
 	   x_d_flr=xt
 	   y_d_flr=yt
+	   spec(17)=xt
+	   spec(18)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_flr = shmsSTOP_D1_flr + 1
 	      shmsSTOP_id =22
 	      goto 500
 	   endif
-	   spec(17)=xt
-	   spec(18)=yt
 
 ! Go to D1 magnetic entrance
 ! Find intersection with rotated aperture plane.
@@ -780,13 +779,13 @@ c           pathlen=tpathlen
 	   xt = xt + 2.82
 	   x_d_men=xt
 	   y_d_men=yt
+	   spec(19)=xt
+	   spec(20)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_men = shmsSTOP_D1_men + 1
 	      shmsSTOP_id =23
 	      goto 500
 	   endif
-	   spec(19)=xt
-	   spec(20)=yt
 
 ! Go to first dipole interior aperture
 ! Find intersection with rotated aperture plane
@@ -799,14 +798,14 @@ c           pathlen=tpathlen
 	   xt = xt + 8.1
 	   x_d_m1=xt
 	   y_d_m1=yt
+	   spec(21)=xt
+	   spec(22)=yt
+
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid1 = shmsSTOP_D1_mid1 + 1
 	      shmsSTOP_id=24
 	      goto 500
 	   endif
-	   spec(21)=xt
-	   spec(22)=yt
-
 
 ! Go  to Dipole interior 2
 ! Find intersection with rotated aperture plane.
@@ -818,13 +817,13 @@ c           pathlen=tpathlen
 	   xt = xt + 11.75
 	   x_d_m2=xt
 	   y_d_m2=yt
+	   spec(23)=xt
+	   spec(24)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid2 = shmsSTOP_D1_mid2 + 1
 	      shmsSTOP_id=25
 	      goto 500
 	   endif
-	   spec(23)=xt
-	   spec(24)=yt
 	   
 ! Go to dipole interior 3
 	   call transp(spectr,25,decay_flag,dflag,m2,p,
@@ -835,13 +834,13 @@ c           pathlen=tpathlen
 	   xt = xt + 13.96
 	   x_d_m3=xt
 	   y_d_m3=yt
+	   spec(25)=xt
+	   spec(26)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid3 = shmsSTOP_D1_mid3 + 1
 	      shmsSTOP_id=26
 	      goto 500
  	   endif
-	   spec(25)=xt
-	   spec(26)=yt
 	   
 	   
 ! Go to dipole interior 4
@@ -853,13 +852,13 @@ c           pathlen=tpathlen
 	   xt = xt + 14.70
 	   x_d_m4=xt
 	   y_d_m4=yt
+	   spec(27)=xt
+	   spec(28)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid4 = shmsSTOP_D1_mid4 + 1
 	      shmsSTOP_id=27
 	      goto 500
 	   endif
-	   spec(27)=xt
-	   spec(28)=yt
 	      
 ! Go to dipole interior 5
 	   call transp(spectr,27,decay_flag,dflag,m2,p,
@@ -870,13 +869,13 @@ c           pathlen=tpathlen
 	   xt = xt + 13.96
 	   x_d_m5=xt
 	   y_d_m5=yt
+	   spec(29)=xt
+	   spec(30)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid5 = shmsSTOP_D1_mid5 + 1
 	      shmsSTOP_id=28
 	      goto 500
 	   endif
-	   spec(29)=xt
-	   spec(30)=yt
 
 ! Go to diple interior 6
 	   call transp(spectr,28,decay_flag,dflag,m2,p,
@@ -887,13 +886,13 @@ c           pathlen=tpathlen
 	   xt = xt + 11.75
 	   x_d_m6=xt
 	   y_d_m6=yt
+	   spec(31)=xt
+	   spec(32)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid6 = shmsSTOP_D1_mid6 + 1
 	      shmsSTOP_id=29
 	      goto 500
 	   endif
-	   spec(31)=xt
-	   spec(32)=yt
 
 ! Go to diple interior 7
 	   call transp(spectr,29,decay_flag,dflag,m2,p,
@@ -904,14 +903,14 @@ c           pathlen=tpathlen
 	   xt = xt + 8.5
 	   x_d_m7=xt
 	   y_d_m7=yt
+	   spec(33)=xt
+	   spec(34)=yt
+
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mid7 = shmsSTOP_D1_mid7 + 1
 	      shmsSTOP_id=30
 	      goto 500
 	   endif
-	   spec(33)=xt
-	   spec(34)=yt
-
 
 ! Go to D1 magnetic exit
 ! Find intersection with rotated aperture plane.
@@ -924,13 +923,13 @@ c           pathlen=tpathlen
 	   xt = xt + 2.82
 	   x_d_mex=xt
 	   y_d_mex=yt
+	   spec(35)=xt
+	   spec(36)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_mex = shmsSTOP_D1_mex + 1
 	      shmsSTOP_id =31
 	      goto 500
 	   endif
-	   spec(35)=xt
-	   spec(36)=yt
 
 ! Go to D1 OUT mechanical boundary.
 ! Find intersection with rotated aperture plane.
@@ -942,14 +941,14 @@ c           pathlen=tpathlen
 	   xt = xt - 6.9
 	   x_d_out=xt
 	   y_d_out=yt
+           spec(37)=xt
+           spec(38)=yt
 	   if ((xt*xt + yt*yt).gt.r_D1*r_D1) then
 	      shmsSTOP_D1_out = shmsSTOP_D1_out + 1
 	      shmsSTOP_id=32
 	      goto 500
 	   endif
-           spec(37)=xt
-           spec(38)=yt
-
+ 
 
 ! Transport to focal plane.
 	   call transp(spectr,n_classes,decay_flag,dflag,m2,p,
