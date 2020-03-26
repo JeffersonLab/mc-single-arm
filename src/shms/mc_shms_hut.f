@@ -214,7 +214,7 @@ c	     write(*,*) ' iplane = ',iplane
 	  shmsSTOP_dc1 = shmsSTOP_dc1 + 1
 c	  write(6,*) 'Lost in DC! delta,xp,yp',dpps,dxdzs,dydzs
 	  if (use_det_cut) then
-	     shmsSTOP_id = 18
+	     shmsSTOP_id = 34
 	     goto 500
 	  endif
 	endif
@@ -278,7 +278,7 @@ C       We've already done decay up to the half-way point between the chambers.
      >      ys.lt.(hdc_2_right-hdc_2y_offset) ) then
 	  shmsSTOP_dc2 = shmsSTOP_dc2 + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id = 19
+	     shmsSTOP_id = 35
 	     goto 500
 	  endif
 	endif
@@ -298,7 +298,7 @@ C at last cathode foil of second drift chamber set, drift to the 1st hodoscope
      >      ys.lt.(hscin_1x_right+hscin_1y_offset)) then
 	  shmsSTOP_s1 = shmsSTOP_s1 + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id=20
+	     shmsSTOP_id=36
 	     goto 500
 	  endif
 	endif
@@ -313,7 +313,7 @@ C at last cathode foil of second drift chamber set, drift to the 1st hodoscope
      >      xs.lt.(hscin_1y_top+hscin_1x_offset)) then
 	  shmsSTOP_s1 = shmsSTOP_s1 + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id=21
+	     shmsSTOP_id=37
 	     goto 500
 	  endif
 	endif
@@ -359,7 +359,7 @@ C drift to 2nd hodoscope
      >      ys.lt.(hscin_2x_right+hscin_2y_offset)) then
 	  shmsSTOP_s3 = shmsSTOP_s3 + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id = 22
+	     shmsSTOP_id = 38
 	     goto 500
 	  endif
 	endif
@@ -374,7 +374,7 @@ C drift to 2nd hodoscope
      >      xs.lt.(hscin_2y_top+hscin_2x_offset)) then
 	  shmsSTOP_s2 = shmsSTOP_s2 + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id=23
+	     shmsSTOP_id=39
 	     goto 500
 	  endif
 	endif
@@ -396,7 +396,7 @@ C in you analysis.  That cut is applied AFTER fitting the track (see below).
      >	   xs.gt.hcal_bottom .or. xs.lt.hcal_top) then
 	  shmsSTOP_cal = shmsSTOP_cal + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id=24
+	     shmsSTOP_id=40
 	     goto 500
 	  endif
 	endif
@@ -439,7 +439,7 @@ C The standard fiducial cut is 5 cm from the edges of the block.
      >	   xcal.gt.(hcal_bottom-5.0) .or. xcal.lt.(hcal_top+5.0)) then
 	  shmsSTOP_cal = shmsSTOP_cal + 1
 	  if (use_det_cut) then
-	     shmsSTOP_id=25
+	     shmsSTOP_id=41
 	     goto 500
 	  endif
 	endif
