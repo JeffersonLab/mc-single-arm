@@ -19,7 +19,7 @@ C HBOOK/NTUPLE common block and parameters.
      >     'ysieve','stop_id',
      >     'psvxi','psvyi' /
 
-      character*8	spec_nt_names(58)/
+      character*8	spec_nt_names(59)/
      >     's_hb1_x', 's_hb1_y','s_hb2_x', 's_hb2_y','s_hb3_x', 
      >     's_hb3_y','s_hb4_x', 's_hb4_y', 's_q1_x', 's_q1_y', ! 10
      >     's_q2_x', 's_q2_y', 's_q3_x', 's_q3_y', !14
@@ -34,7 +34,7 @@ C HBOOK/NTUPLE common block and parameters.
      >     's_cal_x', 's_cal_y', 's_fcal_x', 's_fcal_y',
      >     'sxfp', 'syfp', 
      >     'sdelta', 'sxptar', 'syptar', 'sxcoll', 
-     >     'sycoll', 'sflag'/
+     >     'sycoll', 'sytar', 'sflag'/
 
 
       call hlimit(pawc_size)
@@ -67,7 +67,7 @@ c  Check https://userweb.jlab.org/~brads/Manuals/pawfaq/ for details
 
       call hbookn(1411,'HUT NTUPLE',23,'HUT',10000,hut_nt_names)
       if (spec_ntuple) then
-         call hbookn(1412,'SPEC NTU',58,'HUT',10000,spec_nt_names)
+         call hbookn(1412,'SPEC NTU',59,'HUT',10000,spec_nt_names)
       endif
 
       return
