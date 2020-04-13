@@ -15,7 +15,7 @@ C-______________________________________________________________________________
 
 c Vector (real*4) for hut ntuples - needs to match dimension of variables
 	real*4		shms_hut(23)
-	real*4          shms_spec(58)
+	real*4          shms_spec(59)
 
 	real*4          hms_hut(23)
 c
@@ -86,7 +86,7 @@ C Control flags (from input file)
 c	common /hutflag/ cer_flag,vac_flag
 C Hardwired control flags.
 	logical*4 hut_ntuple	/.true./
-        logical*4 spec_ntuple   /.false./
+        logical*4 spec_ntuple   /.true./
 	logical*4 decay_flag	/.false./
 
 	real*8	dpp_var(2),dth_var(2),dph_var(2),ztg_var(2)
@@ -656,7 +656,11 @@ c
      >          pathlen, 5)
 
 	     if (spec_ntuple) then
-		shms_spec(58) = shmsSTOP_id
+		shms_spec(59) = shmsSTOP_id
+		shms_spec(58)= ytar_init
+		shms_spec(53)= dpp_init
+		shms_spec(54)= dph_init ! dx/dz (mr)
+		shms_spec(55)= dth_init ! dy/dz (mr)
 c            if (ok_spec) spec(58) =1.
 		call hfn(1412,shms_spec)
 	     endif

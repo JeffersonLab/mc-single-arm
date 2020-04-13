@@ -119,7 +119,7 @@ c  lengths of drift in different elements
 	real*8 zd_d1mex,zd_d1out
 	real*8 zd_fp
         real*8 zd_fr_sieve
-        real*4 spec(58)
+        real*4 spec(59)
 
 c	parameter(zd_q1in  = 307.00)
 c	parameter(zd_q1mid = 107.00)
@@ -258,7 +258,7 @@ C ================================ Executable Code =============================
 	shmsSTOP_trials = shmsSTOP_trials + 1
 	xt = th_spec    !avoid 'unused variable' error for th_spec
         if (spec_ntuple) then
-         do ij = 1, 58
+         do ij = 1, 59
           spec(ij) = -100000.
          enddo
         endif
@@ -443,8 +443,12 @@ c Go to HB Mag entrance
            else  
            sieve_hole_r = 0.30
            endif
-
-         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. sieve_hole_r) then
+            if (abs(ys_num) > 5 .or. abs(xs_num) > 5) then
+	      shmsSTOP_DOWNSLIT = shmsSTOP_DOWNSLIT + 1
+	      shmsSTOP_id = 99
+              goto 500
+	       endif
+         if ( sqrt((xc_sieve - xt)**2+(yc_sieve - yt)**2) .gt. sieve_hole_r ) then
 	      shmsSTOP_DOWNSLIT = shmsSTOP_DOWNSLIT + 1
 	      shmsSTOP_id = 99
               goto 500
@@ -995,12 +999,12 @@ C Fill output to return to main code
 *	   write (6,*) 'I am filling the output to return to main code'
 	   dpp = dpp_recon
 	   dxdz = dph_recon
-           spec(53) = dpp
+c           spec(53) = dpp
 
            dydz = dth_recon
 	   y = y_recon
-	   spec(54) = dxdz
-           spec(55) = dydz
+c	   spec(54) = dxdz
+c           spec(55) = dydz
 	   ok_spec = .true.
 	   shmsSTOP_successes = shmsSTOP_successes + 1
 
