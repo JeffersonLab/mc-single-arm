@@ -454,7 +454,10 @@ C------------------------------------------------------------------------------C
 ! function does not type cast string to integer otherwise.
           itime=time8()
    	  call ctime(itime,timestring)
-c	  call srand(itime)
+	  write(6,*) 'Using random seed based on clock time'
+          write(6,*) 'Starting random number seed: ',itime
+C DJG - If you want to use default (fixed) seed, comment out the line below
+          call sgrnd(itime)
 
 	do Itrial = 1,n_trials
 	   if(ispec.eq.1) then
