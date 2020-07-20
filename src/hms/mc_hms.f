@@ -188,6 +188,10 @@ C ================================ Executable Code =============================
             sieve_hole_r = 0.127
            else if((ys_num.eq.1 .and. xs_num.eq.1) .or. (ys_num.eq.-1 .and. xs_num.eq.-2)) then
             sieve_hole_r = 0.0
+	   else if ( abs(ys_num) .gt. 4) then
+	      sieve_hole_r = 0.0
+	   else if ( abs(xs_num) .gt. 4) then
+	      sieve_hole_r = 0.0
            else  
             sieve_hole_r = 0.254
            endif
@@ -246,6 +250,7 @@ C------------------------------------------------------------------------------C
 ! Check front of fixed slit.
 	  zdrift = z_entr
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
+	if (.not. use_sieve) then
 	  if (abs(ys-y_off).gt.h_entr) then
 	    hSTOP_fAper_hor = hSTOP_fAper_hor + 1
 	    hSTOP_id = 5
@@ -261,11 +266,12 @@ C------------------------------------------------------------------------------C
 	    hSTOP_id = 5
 	    goto 500
 	  endif
-
+          endif
 !Check back of fixed slit.
 
 	  zdrift = z_exit-z_entr
 	  call project(xs,ys,zdrift,decay_flag,dflag,m2,p,pathlen) !project and decay
+	if (.not. use_sieve) then
 	  if (abs(ys-y_off).gt.h_exit) then
 	    hSTOP_bAper_hor = hSTOP_bAper_hor + 1
 	    hSTOP_id = 6
@@ -281,7 +287,7 @@ C------------------------------------------------------------------------------C
 	    hSTOP_id = 6
 	    goto 500
 	  endif
-
+          endif
 ! Go to Q1 IN  mag bound.  Drift rather than using COSY matrices
 
 	  if (.not.adrift(spectr,1)) write(6,*) 'Transformation #1 is NOT a drift'
