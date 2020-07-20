@@ -494,6 +494,15 @@ C Units are cm.
              foil_nm=anint(foil_nm)                     != 0, 1
 	     foil_zcent = foil_nm * 5
 	     z = (grnd() - 0.5) * foil_tk - 5+ foil_nm * 10
+	  elseif(gen_lim(6).eq.-5) then
+            foil_nm=5*grnd()-2.5                       ! pol target optics
+             foil_nm=anint(foil_nm)                     !=
+	     if (foil_nm .eq. -2) foil_zcent = 20.
+	     if (foil_nm .eq. -1) foil_zcent = 13.34
+	     if (foil_nm .eq. 0)  foil_zcent = 0.0
+	     if (foil_nm .eq. 1) foil_zcent = -20.
+	     if (foil_nm .eq. 2) foil_zcent = -30.
+             z= (grnd() - 0.5) * foil_tk + foil_zcent
 
           endif
 C DJG Assume flat raster
