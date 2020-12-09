@@ -97,8 +97,8 @@ c collimator
 
 	parameter (h_entr = 8.5)
 	parameter (v_entr = 12.5)
-	parameter (h_exit = 8.5)
-	parameter (v_exit = 12.5)
+	parameter (h_exit = 8.65)
+	parameter (v_exit = 12.85)
 	parameter (x_off=+0.00)
 	parameter (y_off=+0.00)
 
@@ -186,7 +186,7 @@ C Distances for 2017 ME's
         parameter(zd_fr_sieve  = 108.0)
         parameter(zd_hbin  = 118.39)
 	parameter(zd_hbmen = 17.61) ! shms-2017 ME's
-        parameter(zd_hbmex = 75.134)
+        parameter(zd_hbmex = 80.0)
         parameter(zd_hbout = 17.61)
 c	parameter (z_entr = 52.04) ! 6.35 cm in front of Q1
 	parameter (z_entr = 22.4) ! 80 cm from center of HB
