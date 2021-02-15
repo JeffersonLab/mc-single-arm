@@ -353,7 +353,7 @@ C Strip off header
 
 ! Spectrometer offsets
 	read (chanin, 1001) str_line
-	write(8,*),str_line(1:last_char(str_line))
+	write(*,*),str_line(1:last_char(str_line))
 	iss = rd_real(str_line,spec_xoff)
 	if(.not.iss) stop 'ERROR (spect. xoff) in setup!'
 
