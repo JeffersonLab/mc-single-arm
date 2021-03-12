@@ -687,7 +687,7 @@ c            if (ok_spec) spec(58) =1.
 	     call mc_hms(p_spec, th_spec, dpp_s, x_s, y_s, z_s, 
      >          dxdz_s, dydz_s,
      >          x_fp, dx_fp, y_fp, dy_fp, m2,
-     >          ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
+     >          ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
      >          pathlen)
 	  else
 	     write(6,*) 'Unknown spectrometer! Stopping..'
