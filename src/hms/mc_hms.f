@@ -463,7 +463,10 @@ C------------------------------------------------------------------------------C
 	  zdrift = driftdist(spectr,12) - z_dip3	!distance left to go.
 	  call mc_hms_hut(m2,p,x_fp,dx_fp,y_fp,dy_fp,ms_flag,wcs_flag,
      >		decay_flag,dflag,resmult,ok,-zdrift,pathlen)
-	  if (.not.ok) goto 500
+	  if (.not.ok) then 
+	     hSTOP_id = 36
+	     goto 500
+	  endif
 
 ! replace xs,ys,... with 'tracked' quantities.
 	  xs=x_fp
