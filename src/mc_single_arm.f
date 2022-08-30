@@ -73,10 +73,9 @@ C Initial and reconstructed track quantities.
 	real*8 dpp_init,dth_init,dph_init,xtar_init,ytar_init,ztar_init
 	real*8 dpp_recon,dth_recon,dph_recon,ztar_recon,ytar_recon
 	real*8 x_fp,y_fp,dx_fp,dy_fp		!at focal plane
-	real*8 frx,fry,fr1,fr2
+	real*8 fry,fr1,fr2
 	real*8 p_spec,th_spec			!spectrometer setting
 	real*8 resmult
-	real*8 targ_Bangle,ang_targ,stheta,ctheta,pelec
 
 C Control flags (from input file)
 	integer*4 ispec
@@ -84,7 +83,6 @@ C Control flags (from input file)
 	logical*4 ms_flag
 	logical*4 wcs_flag
 	logical*4 store_all
-	logical*4 using_tgt_field
 
 c	common /hutflag/ cer_flag,vac_flag
 C Hardwired control flags.
@@ -103,13 +101,13 @@ C Local  spectrometer varibales
 C Function definitions.
 
 	integer*4	last_char
-	logical*4	rd_int,rd_real,strip
+	logical*4	rd_int,rd_real
 	real*8          grnd,gauss1
 	INTEGER irnd
 	REAL rnd(99)
         integer      itime,ij
         character	timestring*30
-        character tgt_field_file*60
+
         character*80 rawname, filename, hbook_filename
 	real*4  secnds,zero
 
@@ -407,24 +405,6 @@ C Strip off header
      > stop 'ERROR: store_all in setup file!'
 	if (tmp_int.eq.1) store_all = .true.
 
-!     Read in flag for polarized target field
-	read (chanin,1001) str_line
-	write(*,*),str_line(1:last_char(str_line))
-	if (.not.rd_int(str_line,tmp_int)) 
-     > stop 'ERROR: store_all in setup file!'
-      	if (tmp_int.eq.1) using_tgt_field = .true.
-
-	read (chanin, 1001) str_line
-	write(*,*),str_line(1:last_char(str_line))
-	iss = rd_real(str_line,targ_Bangle)
-	if(.not.iss) stop 'ERROR (target B angle) in setup!'
-	targ_Bangle = targ_Bangle/degrad
-
-	read (chanin, 1001) str_line
-	write(*,*),str_line(1:last_char(str_line))
-	iss = strip(str_line,tgt_field_file)
-	if(.not.iss) stop 'ERROR (target field file) in setup!'
-
 !     Read in flag for 'beam energy(MeV)' to trigger on elastic event if present
       beam_energy=-0.1  !by default do not use elastic event generator
       tar_atom_num=12.  !by default it is carbon
@@ -449,8 +429,6 @@ C Strip off header
       iss = rd_real(str_line,tar_atom_num)
 
 
-
-
  1000	continue
 
 C Set particle masses.
@@ -467,44 +445,6 @@ C Set particle masses.
 	  m2 = mk2
 	endif
 
-
-	if(using_tgt_field) then
-	   if(ispec.eq.1) then ! HMS
-	      if (targ_Bangle.lt.0.0) then ! pointing towards HMS side of hall
-		 if (abs(targ_Bangle) .ge. th_spec) then
-		    ang_targ = +1*(abs(targ_Bangle)-th_spec)
-		 else
-		    ang_targ = -1*(th_spec-abs(targ_Bangle))
-		 endif
-	      elseif ( targ_Bangle .ge.0) then 
-		 ang_targ = -1*(abs(targ_Bangle)+th_spec)
-	      else
-		 write(*,*) ' Error determining angle between target and e-arm'
-		 write(*,*) ' targ_Bangle =',targ_Bangle*degrad
-		 write(*,*) ' Central e-arm angle =',th_spec*degrad,' HMS'
-	      endif
-	   elseif(ispec.eq.2) then !SHMS
-	      if (targ_Bangle.gt.0.0) then ! same side
-		 if (abs(targ_Bangle) .ge.th_spec) then
-		    ang_targ = -1*(abs(targ_Bangle)-th_spec)
-		 else
-		    ang_targ = +1*(th_spec-abs(targ_Bangle))
-	      endif
-	   elseif (targ_Bangle.lt.0.0) then ! opposite side 
-	      ang_targ = +1*(abs(targ_Bangle)+th_spec)
-	   else
-	      write(*,*) ' Error determining angle between target and e-arm'
-	      write(*,*) ' targ_Bangle =',targ_Bangle*degrad
-	      write(*,*) ' Central e-arm angle =',th_spec*degrad,' SHMS'
-	   endif
-
-	endif
-
-	   ang_targ = targ_Bangle-th_spec
-
-	   call trgInit(tgt_field_file,ang_targ*degrad,0.,0.,0.)
-
-	endif
 C------------------------------------------------------------------------------C
 C                           Top of Monte-Carlo loop                            C
 C------------------------------------------------------------------------------C
@@ -569,7 +509,6 @@ C DJG Assume flat raster
 	  fr1 = (grnd() - 0.5) * gen_lim(7)   !raster x
 	  fr2 = (grnd() - 0.5) * gen_lim(8)   !raster y
 
-	  frx = fr1
 	  fry = -fr2  !+y = up, but fry needs to be positive when pointing down
 
 	  x = x + fr1
@@ -639,6 +578,10 @@ C DJG Apply spectrometer angle offsets
 	  dxdz_s = dxdz_s - spec_xpoff/1000.0
 	  dydz_s = dydz_s - spec_ypoff/1000.0
 
+C Drift back to zs = 0, the plane through the target center
+	  x_s = x_s - z_s * dxdz_s
+	  y_s = y_s - z_s * dydz_s
+	  z_s = 0.0
 
 C Save init values for later.
 	  xtar_init = x_s
@@ -647,20 +590,6 @@ C Save init values for later.
 	  dpp_init = dpp
 	  dth_init = dydz_s*1000.		!mr
 	  dph_init = dxdz_s*1000.		!mr
-
-
-
-          if (using_tgt_field) then      ! do target field tracking - GAW
-c	     write(*,*) '------------------------------'
-c	     write(*,'("frx,fry,x_E_arm =      ",3f12.5)') frx,fry,x_s
-            call track_from_tgt(x_s,y_s,z_s,dxdz_s,dydz_s,
-     >                          -p_spec*(1+dpps/100.),Me,-1,ok_spec)
-          endif 
-
-C Drift back to zs = 0, the plane through the target center
-	  x_s = x_s - z_s * dxdz_s
-	  y_s = y_s - z_s * dydz_s
-	  z_s = 0.0
 
 C Calculate multiple scattering length of target
 	  if(ispec.eq.1) then ! spectrometer on right
@@ -758,29 +687,11 @@ c            if (ok_spec) spec(58) =1.
 	     call mc_hms(p_spec, th_spec, dpp_s, x_s, y_s, z_s, 
      >          dxdz_s, dydz_s,
      >          x_fp, dx_fp, y_fp, dy_fp, m2,
-c     >          ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
-     >          ms_flag, wcs_flag, decay_flag, resmult, fry, ok_spec, 
+     >          ms_flag, wcs_flag, decay_flag, resmult, xtar_init, ok_spec, 
      >          pathlen)
 	  else
 	     write(6,*) 'Unknown spectrometer! Stopping..'
 	     stop
-	  endif
-
-
-          if (using_tgt_field) then
-	     pelec = p_spec*(1.+dpp_s/100.0)
-	     ctheta = cos(th_spec)
-	     stheta = sin(th_spec)
-	     if(ispec.eq.1) then !spectrometers on the right (HMS)
-		call track_to_tgt(dpp_s,y_s,dxdz_s,dydz_s,frx,-fry,
-     > 	          -1.0*pelec,sqrt(me2),ctheta,stheta,-1,ok_spec,ispec)
-	     else if(ispec.eq.2) then !left spects(SHMS)
-		call track_to_tgt(dpp_s,y_s,dxdz_s,dydz_s,frx,-fry,
-     >	          -1.0*pelec,sqrt(me2),ctheta,-stheta,-1,ok_spec,ispec)
-	     else
-		write(6,*) 'Target field reconstruction not set up for your spectrometer'
-		stop
-	     endif
 	  endif
 
 	  if (ok_spec) then !Success, increment arrays
