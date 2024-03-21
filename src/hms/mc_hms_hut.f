@@ -140,8 +140,8 @@ C shower counter
 	parameter (hcal_radlen = 2.50)
 
 C Wire chamber resolutions (sigma)
-	real*8 hdc_sigma(1:12)/	0.030,0.030,0.030,0.030,0.030,0.030,
-     >				0.030,0.030,0.030,0.030,0.030,0.030/
+        real*8 hdc_sigma(1:12) !removing hard coded values
+        real*8 wcr
 
 C Wire plane positions, construct hdc_zpos array using these parameters
 	integer*4 hdc_nr_cham,hdc_nr_plan
@@ -304,6 +304,15 @@ C Initialize the xdc and ydc arrays to zero
 C Initialize scincount to zero
 
 	scincount = 0
+
+C Set the Wire Chamber Resolution
+
+	wcr = 0.094 * exp(-0.730 * p) + 0.045 !Calculating wire chamber resolution as a function of momentum
+
+        do i = 1, 12
+                hdc_sigma(i) = wcr
+        end do
+
 
 C------------------------------------------------------------------------------C
 C                           Top of loop through hut                            C
