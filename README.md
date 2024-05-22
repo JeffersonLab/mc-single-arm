@@ -1,9 +1,12 @@
 mc_single_arm
 ==============
+Update: May 15, 2024
+
+Removed cernlib dependency for easier RHEL9/Alma9 compatibility.  Output is now fortran binary file.  Separate applications in "util" directory can make either ntuples or root trees. These applications must be compiled separately. Scripts in top directory will generate fortran binary file, run appropriate application to create ntuple/tree, and delete binary file (run_mc_single_arm_ntup and run_mc_single_arm_tree).
+
+***********
 
 Hall C single arm Monte Carlo for HMS and SHMS 
-
-
 
 To compile type "make" in the src directory.
 NOTE: Make sure paths to Cern libararies are defined.

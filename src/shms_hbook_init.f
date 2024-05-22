@@ -1,17 +1,12 @@
       subroutine shms_hbook_init(filename,spec_ntuple)
-C Initialize ntuples differently based on which spectrometer we
+C Initialize output names differently based on which spectrometer we
 C are using
 C
-C HBOOK/NTUPLE common block and parameters.
-      character*80 filename
-      logical*4 spec_ntuple
-      integer*4	pawc_size
-      parameter	(pawc_size = 10000000)
-      common		/pawc/ hbdata(pawc_size)
-      integer*4 hbdata
-      common /QUEST/ iquest(100)
-      integer*4 iquest
-      character*8	hut_nt_names(23)/
+      implicit none
+      include 'hbook.inc'
+      character*80 filename,specfilename
+      logical spec_ntuple
+      character*16	hut_nt_names(23)/
      >     'psxfp', 'psyfp', 'psxpfp', 'psypfp',
      >     'psztari','psytari', 'psdeltai', 'psyptari', 'psxptari',
      >     'psztar','psytar', 'psdelta', 'psyptar', 'psxptar', 
@@ -19,7 +14,7 @@ C HBOOK/NTUPLE common block and parameters.
      >     'ysieve','stop_id',
      >     'psvxi','psvyi' /
 
-      character*8	spec_nt_names(59)/
+      character*16	spec_nt_names(59)/
      >     's_hb1_x', 's_hb1_y','s_hb2_x', 's_hb2_y','s_hb3_x', 
      >     's_hb3_y','s_hb4_x', 's_hb4_y', 's_q1_x', 's_q1_y', ! 10
      >     's_q2_x', 's_q2_y', 's_q3_x', 's_q3_y', !14
@@ -31,43 +26,36 @@ C HBOOK/NTUPLE common block and parameters.
      >     'S_dmex_x', 's_dmex_y', 's_dex_x', 's_dex_y', !38
      >     's_dc1_x', 's_dc1_y', 's_dc2_x', 's_dc2_y', !42
      >     's_s1_x', 's_s1_y', 's_s2_x', 's_s2_y', !46
-     >     's_cal_x', 's_cal_y', 's_fcal_x', 's_fcal_y',
-     >     'sxfp', 'syfp', 
-     >     'sdelta', 'sxptar', 'syptar', 'sxcoll', 
-     >     'sycoll', 'sytar', 'sflag'/
+     >     's_cal_x', 's_cal_y', 's_fcal_x', 's_fcal_y', !50
+     >     'sxfp', 'syfp',  !52
+     >     'sdelta', 'sxptar', 'syptar', 'sxcoll', !56 
+     >     'sycoll', 'sytar', 'sflag'/ !59
 
+      integer*4 i
+      integer*4	last_char
 
-      call hlimit(pawc_size)
-c By Jixie: to create a large ntuple, we need to do the following 4 things:
-c  1) CALL hlimit(pawc_size) with a big argument (set 'pawc_size' to a big value). 
-c  2) set 'iquest(10)' to a big number, this value means the maximum records.
-c     Important note: It is very important to initialise IQUEST(10) just before
-c     the call to HROPEN. The QUEST common block is used a lot in the whole CERNLIB,
-c     and in particular in HBOOK, so if the value of IQUEST(10) is defined too far
-c     from the call to HROPEN, very likely it will not have the expected value when
-c     needed. 
-c  3) CALL HROPEN with a large value of LRECL (ex LRECL=4096 instead of 1024)
-c     and you can get files 4 times bigger. This value means the maximum words
-c     in one record.
-c  4) CALL HROPEN with the option QE (E for "Extended"). This option allows to
-c     have up to 2**32 records in an HBOOK file.
-c  By default, no nutuple will be larger than 2G Bytes. Other place need to be
-c  changed if you want that happen.
-c  Check https://userweb.jlab.org/~brads/Manuals/pawfaq/ for details
-!  also see for example
-!   http://wwwasd.web.cern.ch/wwwasd/cgi-bin/listpawfaqs.pl/7
+      NtupleIO=30
+      NtupleSize=23
 
-      iquest(10) = 512000
-      call hropen(30,'HUT',filename,'NQE',4096,i) !CERNLIB
- 
-      if (i.ne.0) then
-         write(*,*),'HROPEN error: istat = ',i
-         stop
-      endif
+      open(NtupleIO,file=filename,form="unformatted",access="sequential")  
 
-      call hbookn(1411,'HUT NTUPLE',23,'HUT',10000,hut_nt_names)
+      write(NtupleIO) NtupleSize
+      do i=1,NtupleSize
+         write(NtupleIO) hut_nt_names(i)
+      enddo
+
       if (spec_ntuple) then
-         call hbookn(1412,'SPEC NTU',59,'HUT',10000,spec_nt_names)
+         SpecNtupleIO=31
+         SpecNtupleSize=59
+         i=index(filename,' ')
+         i=i-4
+         specfilename = filename(1:i)//'spec.bin'
+         open(SpecNtupleIO,file=specfilename,form="unformatted",
+     >        access="sequential")  
+         write(SpecNtupleIO) SpecNtupleSize
+         do i=1,SpecNtupleSize
+            write(SpecNtupleIO) spec_nt_names(i)
+         enddo
       endif
 
       return

@@ -8,6 +8,7 @@ SHELL     = /bin/sh
 H      = hms/
 SH      = shms/
 SHARE	  = shared/
+CH	= cern/
 
 my_objs = hms_hbook_init.o shms_hbook_init.o \
           target_cans.o \
@@ -16,6 +17,7 @@ my_objs = hms_hbook_init.o shms_hbook_init.o \
 	  $(SHARE)project.o $(SHARE)transp.o $(SHARE)rotate_haxis.o \
 	  $(SHARE)rotate_vaxis.o $(SHARE)locforunt.o $(SHARE)musc.o \
           $(SHARE)musc_ext.o $(SHARE)stringlib.o mt19937.o gauss1.o \
+	  $(CH)lfit.o $(CH)ranlux.o $(CH)fint.o $(CH)kerset.o $(CH)abend.o \
           loren.o
 
 MYOS := $(subst -,,$(shell uname))
@@ -23,7 +25,7 @@ MYOS := $(subst -,,$(shell uname))
 
 
 #CERNLIBS = -lgeant$(GEANTVER) -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
-CERNLIBS = -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
+#CERNLIBS = -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib
 
 ifeq ($(MYOS),HPUX)
   ifneq (,$(findstring 09,$(shell uname -r)))
@@ -100,7 +102,8 @@ ifeq ($(MYOS),Linux)
 #  INCLUDES=-I.,..,./sos,$(SH),./hrsr,./hrsl,./shms,$(Csoft)/INCLUDE
   FFLAGS= $(INCLUDES) $(FFLAGSA)
   FFLAG1=$(FFLAGS) -c
-  OTHERLIBS =  -L$(CERN_ROOT)/lib $(CERNLIBS) -L/usr/lib
+#  OTHERLIBS =  -L$(CERN_ROOT)/lib $(CERNLIBS) -L/usr/lib
+  OTHERLIBS =  -L/usr/lib
   FC  := gfortran
   F77 :=gfortran
 endif
@@ -147,5 +150,5 @@ mc_single_arm: $(my_objs) Makefile mc_single_arm.o
 	$(F77) -o $@ $(FFLAGS) mc_single_arm.o $(my_objs) $(OTHERLIBS)
 
 clean:
-	rm -f *.o $(H)*.o $(SH)*.o $(SHARE)*.o mc_single_arm
+	rm -f *.o $(H)*.o $(SH)*.o $(SHARE)*.o $(CH)*.o mc_single_arm
 
