@@ -13,13 +13,13 @@ C     Program to convert simc .bin file to root tree
       external GetNumBranches
 
       real*8 ntup(80)
-      real*4 ntup_out(80)
+      real*8 ntup_out(80)
 
       parameter(nev=10000000)
       io=99
 
 c input filename
-      write(6,*) 'Enter filename to convert (without .bin extesntion)'
+      write(6,*) 'Enter filename to convert (without .bin extension)'
       read(5,*) rawname
       i=index(rawname,' ')
       filename='../../worksim/'//rawname(1:i-1)//'.bin'
@@ -36,6 +36,7 @@ c output filename
       do i=1,NtupleSize
          read(io) NtupleTag(i)
          call AddNtBranch(ntup_out(i),NtupleTag(i))
+         write(6,*) NtupleTag(i)
       enddo
 
 c now loop over events     

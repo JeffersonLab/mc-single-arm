@@ -21,7 +21,7 @@ using namespace std;
 extern "C" {
   void initrootnt_(const char *title, const char *access, int ltitle, int laccess);
   void reinitrootnt_(const char *access, int laccess);
-  void addntbranch_(float *element, const char *chtag, int ltag);
+  void addntbranch_(double *element, const char *chtag, int ltag);
   void fillntbranch_(const char *chtag, int ltag);
   int getnumbranches_();
   void rootntoutp_();
@@ -87,6 +87,30 @@ char *truestr(const char *str, int len)
  return tstr;
 }//truestr->
 
+//--------------------------------------------------------------------------
+char *leaftruestr(const char *str, int len)
+     // Converts a Fortran character string str of length len into a properly
+     // formed C character string with '\0' at the end; trims blank spaces
+     // at the end of the string
+     // DJG: This version adds the definition of the data type to put in the leaf of the branch
+     // DJG: ("/D"=double) 
+{
+ int tlen=0;
+ char tem;
+/*Counts non-blank charachters in a string str until a first blank character
+  or the end of the string is met*/
+
+ while (str[tlen] !=' ' && (tlen < len ) && (tem=str[tlen++],tem)) ;
+
+
+ char *tstr = new char[tlen+2];
+ strncpy(tstr,str,tlen);
+ tstr[tlen]='/';
+ tstr[tlen+1]='D';
+ tstr[tlen+2]='\0';
+
+ return tstr;
+}//truestr->
 
 void teststr_(const char *str,int lstr)
 {
@@ -151,10 +175,10 @@ void reinitrootnt_(const char *access, int laccess)
 
 
 //------------------------------------------------------------------------
-  void addntbranch_(float *element, const char *chtag, int ltag)
+  void addntbranch_(double *element, const char *chtag, int ltag)
     //Add an ntuple branch pointing at a Fortran variable element
 {
-  nt->Branch(truestr(chtag,ltag),element, truestr(chtag,ltag));
+  nt->Branch(truestr(chtag,ltag), element, leaftruestr(chtag,ltag));
 
   return;
   }//addntbranch_ ->
@@ -204,7 +228,7 @@ void printnt_()
 //////////////////////////////////////////////////////////////////////////
  void initrootnt_(const char *title, const char *access, int ltitle, int laccess){return;}
  void reinitrootnt_(const char *access, int laccess){return;}
- void addntbranch_(float *element, const char *chtag, int ltag){return;}
+ void addntbranch_(double *element, const char *chtag, int ltag){return;}
  void fillntbranch_(const char *chtag, int ltag){return;}
  int getnumbranches_(){return;}
  void printnt_(){return;}
