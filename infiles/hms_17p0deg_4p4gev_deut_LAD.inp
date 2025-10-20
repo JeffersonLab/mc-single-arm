@@ -1,7 +1,7 @@
 !------------------------------------------------------------------------------
 ! Input file for MC_SINGLE_ARM 					
 !------------------------------------------------------------------------------
-    10000	Monte-Carlo trials
+   1000000	Monte-Carlo trials
         1       Spectrometer (1=HMS, 2=SHMS, 3=..)
      4400	Spectrometer momentum (in MeV/c)
      17.0	Spectrometer angle (in degrees)C
@@ -35,10 +35,10 @@
      1	        flag for storing all events (including failed events with stop_id > 0)
      0          doing elastic?
      1          using RC tables?
-     10700      ebeam in MeV
+     10676.0      ebeam in MeV
      0          flag for sieve
      2.0141021  target A
-     1.6743     target thickness in g/cm2
-     275        number of momentum bins in RC table
+     3.3486     target thickness in g/cm2
+     276        number of momentum bins in RC table
      69         number of theta bins in RC table
-     lad_rc_d2cryo_lad.out    RC table name
+     lad_d2cryo20cm_v2.out    RC table name

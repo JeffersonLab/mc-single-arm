@@ -15,7 +15,7 @@ C-______________________________________________________________________________
 	include 'hbook.inc'
 
 c Vector (real*4) for hut ntuples - needs to match dimension of variables
-	real*8		shms_hut(31)
+	real*8		shms_hut(32)
 	real*8          shms_spec(59)
 
 	real*8          hms_hut(31)
@@ -754,7 +754,7 @@ c       call with vertex quantities
 	    if(do_rctables) then
 	       call xsec_model(ispec,theta_vert,eprime_vert,radfile,npbins,nthbins,xsecv,xsecr)
 	       r = sqrt(1.+(dth_init/1000.0)**2+(dph_init/1000.0)**2)
-	       jacobian = 1.0/r**3 ! small correction for transormation from Cartesian to spherical angles
+	       jacobian = 1.0/r**3 ! small correction for transformation from Cartesian to spherical angles
 	       weight=xsecr*jacobian
 	    else
 	       xsecr=0.0
@@ -810,14 +810,15 @@ C for spectrometer ntuples
 	       shms_hut(21)= shmsSTOP_id
 	       shms_hut(22)= x
 	       shms_hut(23)= y
-	       shms_hut(24)= xb_recon
-	       shms_hut(25)= q2_recon
-	       shms_hut(26)= w_recon
-	       shms_hut(27)= eprime_recon
-	       shms_hut(28)= theta_recon
-	       shms_hut(29)= xsecv
-	       shms_hut(30)= xsecr
-	       shms_hut(31)= weight
+	       shms_hut(24)= xb_vert
+	       shms_hut(25)= xb_recon
+	       shms_hut(26)= q2_recon
+	       shms_hut(27)= w_recon
+	       shms_hut(28)= eprime_recon
+	       shms_hut(29)= theta_recon
+	       shms_hut(30)= xsecv
+	       shms_hut(31)= xsecr
+	       shms_hut(32)= weight
 	       do ivar=1,NtupleSize
 		  write(NtupleIO) shms_hut(ivar)
 	       enddo
@@ -883,7 +884,7 @@ c       calculate normfac
 	targetfac = targ_thick*Na/tar_atom_num/cm2toubarn
 	nelectrons = 1.0/e	!1 mC of electrons
 	normfac = nelectrons*targetfac*genvol/n_trials !sr*GeV/ub
-
+	
 	
 C Close NTUPLE file.
 
