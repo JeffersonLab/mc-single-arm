@@ -52,7 +52,7 @@
                else
                   radcor(i,j) =0.0
                endif
-               write(9,*) 'radcor read in:',i,j,eprad(j),thrad(i),radcor(i,j),sigrad(i,j),sigv(i,j),coulcor(i,j)
+c               write(9,*) 'radcor read in:',i,j,eprad(j),thrad(i),radcor(i,j),sigrad(i,j),sigv(i,j),coulcor(i,j)
             enddo		! loop over eprime
          enddo                  !loop over theta
  99      continue
