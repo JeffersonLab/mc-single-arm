@@ -52,7 +52,7 @@
                else
                   radcor(i,j) =0.0
                endif
-               write(9,*) 'radcor read in:',i,j,eprad(j),thrad(i),radcor(i,j),sigrad(i,j),sigv(i,j),coulcor(i,j)
+c               write(9,*) 'radcor read in:',i,j,eprad(j),thrad(i),radcor(i,j),sigrad(i,j),sigv(i,j),coulcor(i,j)
             enddo		! loop over eprime
          enddo                  !loop over theta
  99      continue
@@ -149,7 +149,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       enddo                     !loop over theta
 
       sig_vert_func=A1234
-      sig_vert_func=sig_vert_func/1000.0 ! convert ot ub I think
+      sig_vert_func=sig_vert_func/1000.0 ! convert to ub I think
 c      sig_vert_qe=B1234/1000.0
 
       return
@@ -191,7 +191,7 @@ CC 2D radcor file
 
 	if(ep.lt.eprad(1)) then
 	   eptmp = eprad(1)
-	   write(6,*) 'WARNING, EP .lt. ep_min: sig_rad'
+	   write(6,*) 'WARNING, EP .lt. ep_min: sig_rad', ep, eprad(1)
 	endif
 
 	if(ep.gt.eprad(kmax)) then

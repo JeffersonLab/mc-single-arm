@@ -6,13 +6,13 @@ C
       include 'hbook.inc'
       character*80 filename,specfilename
       logical spec_ntuple
-      character*16	hut_nt_names(31)/
+      character*16	hut_nt_names(32)/
      >     'psxfp', 'psyfp', 'psxpfp', 'psypfp',
      >     'psztari','psytari', 'psdeltai', 'psyptari', 'psxptari',
      >     'psztar','psytar', 'psdelta', 'psyptar', 'psxptar', 
      >     'psxtari','fry','xsnum','ysnum','xsieve',
      >     'ysieve','stop_id',
-     >     'psvxi','psvyi','xb','q2','w','eprime','theta',
+     >     'psvxi','psvyi','xbi','xb','q2','w','eprime','theta',
      >      'sigvert','sigrad','weight'/
 
       character*16	spec_nt_names(59)/
@@ -36,7 +36,7 @@ C
       integer*4	last_char
 
       NtupleIO=30
-      NtupleSize=31
+      NtupleSize=32
 
       open(NtupleIO,file=filename,form="unformatted",access="sequential")  
 
@@ -46,7 +46,7 @@ C
       enddo
 
       if (spec_ntuple) then
-         SpecNtupleIO=31
+         SpecNtupleIO=32
          SpecNtupleSize=59
          i=index(filename,' ')
          i=i-4
