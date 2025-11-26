@@ -46,7 +46,7 @@ C Strip off header
       read (1,1001,end=1000,err=1000) str_line
       write(6,*) str_line(1:last_char(str_line))
       iss = rd_real(str_line,ebeamin)
-      ebeamin=ebeamin/3000.0
+      ebeamin=ebeamin/1000.0
 
       do i=1,3
          read (1,1001) str_line
