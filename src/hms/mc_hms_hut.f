@@ -1,4 +1,4 @@
-	subroutine mc_hms_hut (m2,p,x_fp,dx_fp,y_fp,dy_fp,ms_flag,wcs_flag,
+	subroutine mc_hms_hut (m2,p,p_spec,x_fp,dx_fp,y_fp,dy_fp,ms_flag,wcs_flag,
      >		decay_flag,dflag,resmult,ok_hut,zinit,pathlen)
 
 C----------------------------------------------------------------------
@@ -140,8 +140,10 @@ C shower counter
 	parameter (hcal_radlen = 2.50)
 
 C Wire chamber resolutions (sigma)
-	real*8 hdc_sigma(1:12)/	0.030,0.030,0.030,0.030,0.030,0.030,
-     >				0.030,0.030,0.030,0.030,0.030,0.030/
+c	real*8 hdc_sigma(1:12)/	0.030,0.030,0.030,0.030,0.030,0.030,
+c      >		        0.030,0.030,0.030,0.030,0.030,0.030/
+	real*8 hdc_sigma(1:12)	!removing hard coded values
+        real*8 wcr
 
 C Wire plane positions, construct hdc_zpos array using these parameters
 	integer*4 hdc_nr_cham,hdc_nr_plan
@@ -226,7 +228,7 @@ C Calorimeter position
 
 C The arguments
 
-	real*8 p,m2			!momentum and mass of particle
+	real*8 p,m2,p_spec			!momentum and mass of particle
 	real*8 x_fp,y_fp,dx_fp,dy_fp	!Focal plane values to return
 	real*8 xcal,ycal 		!Position of track at calorimeter.
 	real*8 zinit			!Initial z-position (Not at F.P.)
@@ -304,6 +306,14 @@ C Initialize the xdc and ydc arrays to zero
 C Initialize scincount to zero
 
 	scincount = 0
+
+C Set the Wire Chamber Resolution
+
+	wcr = 0.094 * exp(-0.000730 * p_spec) + 0.045 !Calculating wire chamber resolution as a function of momentum
+
+        do i = 1, 12
+                hdc_sigma(i) = wcr
+        end do
 
 C------------------------------------------------------------------------------C
 C                           Top of loop through hut                            C
