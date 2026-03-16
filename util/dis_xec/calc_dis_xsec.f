@@ -6,11 +6,11 @@ c     between the model used in MC and the model used to get the "central" verte
 
       implicit none
 
-      real*8 ebeamin,thetain,Ep_min,Ep_step
+      real*8 ebeamin,thetain,var_min,var_step
       real*8 sigdis,thrad,mp
       real*8 Q2,xbj,W,nu
       real*8 eprime,xsecvert,xsecrad
-      integer i,nEpbin,ispec,npbins,nthbins
+      integer i,nvarbin,ispec,npbins,nthbins,flag
       character*80 rawname,filename,radfile,xfile
       character*132 str_line
       logical*4 iss
@@ -23,9 +23,10 @@ C Function definitions.
       parameter (mp=0.938272)
 
 
-      write(6,*) 'Enter theta (deg.), ',
-     >   ' minimum Eprime (GeV),Eprime-step, # of Eprime bins'
-      read(5,*) thetain,Ep_min,Ep_step,nEpbin
+      write(6,*) 'Enter flag, theta (deg.), ',
+     >     ' <var> minimum, <var>-step, # of <var> bins',
+     >     '  where <var> is Eprime(flag=0) or xbj(flag=1)' 
+      read(5,*) flag,thetain,var_min,var_step,nvarbin
       
       write(6,*)'Enter input filename (assumed to be in infiles dir)'
       read(*,1968) rawname
@@ -76,13 +77,22 @@ c         write(6,*) str_line
       thrad = thetain*3.141592654/180.0
       ispec=1                   !doesn't matter what this is
 
-      do i=1,nEpbin
-         eprime=Ep_min+(i-1)*Ep_step
-C     calculate some other stuff while we're here
-         nu=ebeamin-eprime
-         Q2=4.0*ebeamin*eprime*sin(thrad/2)**2
-         xbj=Q2/2./mp/nu
-         W=sqrt(-Q2+mp**2+2.0*mp*nu)
+
+      do i=1,nvarbin
+         if(flag.eq.0) then
+            eprime=var_min+(i-1)*var_step
+            nu=ebeamin-eprime
+            Q2=4.0*ebeamin*eprime*sin(thrad/2)**2
+            xbj=Q2/2./mp/nu
+            W=sqrt(-Q2+mp**2+2.0*mp*nu)
+         elseif(flag.eq.1) then
+            xbj=var_min+(i-1)*var_step
+            eprime=ebeamin/(1.0+2.0*ebeamin/(mp*xbj)*sin(thrad/2.0)**2)
+            nu=ebeamin-eprime
+            Q2=4.0*ebeamin*eprime*sin(thrad/2)**2
+            W=sqrt(-Q2+mp**2+2.0*mp*nu)
+         endif
+         
          call xsec_model(ispec,thrad,eprime,radfile,npbins,nthbins,xsecvert,xsecrad)
          sigdis=xsecvert
          if(first) then
