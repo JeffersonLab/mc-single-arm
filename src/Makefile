@@ -11,7 +11,7 @@ SHARE	  = shared/
 CH	= cern/
 
 my_objs = hms_hbook_init.o shms_hbook_init.o \
-          target_cans.o \
+          target_cans.o xsec_model.o get_physics.o \
           $(H)mc_hms.o $(H)mc_hms_hut.o $(H)mc_hms_recon.o \
           $(SH)mc_shms.o $(SH)mc_shms_hut.o $(SH)mc_shms_recon.o \
 	  $(SHARE)project.o $(SHARE)transp.o $(SHARE)rotate_haxis.o \

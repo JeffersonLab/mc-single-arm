@@ -15,7 +15,7 @@ C     Program to convert simc .bin file to root tree
       real*8 ntup(80)
       real*8 ntup_out(80)
 
-      parameter(nev=10000000)
+      parameter(nev=100000000)
       io=99
 
 c input filename
@@ -40,7 +40,7 @@ c output filename
       enddo
 
 c now loop over events     
-      do j=1,nev
+      do while(.true.)
          do i=1,NtupleSize
             read(io,iostat=check) ntup(i)
             if (check.lt.0) then
