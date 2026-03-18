@@ -6,8 +6,8 @@ c     between the model used in MC and the model used to get the "central" verte
 
       implicit none
 
-      real*8 ebeamin,thetain,var_min,var_step
-      real*8 sigdis,thrad,mp
+      real*8 ebeamin,thetain,q2in,var_min,var_step
+      real*8 sigdis,thrad,mp,sin2th
       real*8 Q2,xbj,W,nu
       real*8 eprime,xsecvert,xsecrad
       integer i,nvarbin,ispec,npbins,nthbins,flag
@@ -23,10 +23,25 @@ C Function definitions.
       parameter (mp=0.938272)
 
 
-      write(6,*) 'Enter flag, theta (deg.), ',
-     >     ' <var> minimum, <var>-step, # of <var> bins',
-     >     '  where <var> is Eprime(flag=0) or xbj(flag=1)' 
-      read(5,*) flag,thetain,var_min,var_step,nvarbin
+      write(6,*) 'Enter flag'
+      write(6,*) '0=fixed theta, bin in eprime'
+      write(6,*) '1=fixed theta, bin in xbj'
+      write(6,*) '2=fixed Q2, bin in xbj'
+      read(5,*) flag
+
+      write(6,*) 'Enter kinematics:'
+      write(6,*) 'theta (deg.) or Q2, '
+      write(6,*) '<var> minimum, <var>-step, # of <var> bins',
+     >     '  where <var> is Eprime (flag=0) or xbj (flag=1 or 2)'
+
+      if(flag.eq.2) then
+         read(5,*) q2in,var_min,var_step,nvarbin
+      elseif(flag.eq.0 .or.flag.eq.1) then
+         read(5,*) thetain,var_min,var_step,nvarbin
+      else
+         write(6,*) 'unkown option, stopping'
+         stop
+      endif
       
       write(6,*)'Enter input filename (assumed to be in infiles dir)'
       read(*,1968) rawname
@@ -73,8 +88,9 @@ c         write(6,*) str_line
       
       radfile='../../rctables/'//xfile
 
-
-      thrad = thetain*3.141592654/180.0
+      if(flag.eq.0 .or. flag.eq.1) then
+         thrad = thetain*3.141592654/180.0
+      endif
       ispec=1                   !doesn't matter what this is
 
 
@@ -91,16 +107,25 @@ c         write(6,*) str_line
             nu=ebeamin-eprime
             Q2=4.0*ebeamin*eprime*sin(thrad/2)**2
             W=sqrt(-Q2+mp**2+2.0*mp*nu)
+         elseif(flag.eq.2) then
+            xbj=var_min+(i-1)*var_step
+            Q2=q2in
+            nu=Q2/xbj/2./mp
+            eprime=ebeamin-nu
+            sin2th=Q2/(4.0*ebeamin*eprime)
+            thrad=2.0*asin(sqrt(sin2th))
+            thetain=thrad*180.0/3.141592654
+            W=sqrt(-Q2+mp**2+2.0*mp*nu)
          endif
          
          call xsec_model(ispec,thrad,eprime,radfile,npbins,nthbins,xsecvert,xsecrad)
          sigdis=xsecvert
          if(first) then
-            write(6,*) 'Eprime   theta     xBj      Q2       W ',
-     >        '       Cross section (ub/GeV/sr)'
+            write(6,*) 'Eprime    theta      xBj       Q2        W ',
+     >        '        Cross section (ub/GeV/sr)'
             first=.false.
          endif
          write(6,1003) eprime,thetain,xbj,Q2,W,xsecvert
       enddo
- 1003 format(1x,f5.3,4x,f6.3,3(4x,f5.3),4x,e11.5)
+ 1003 format(1x,f6.4,4x,f7.4,3(4x,f6.4),4x,e11.5)
       end
