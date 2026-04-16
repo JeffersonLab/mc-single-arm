@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>mc-single-arm JSROOT Browser</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body class="viewer-body">
+    <div class="viewer-shell">
+      <header class="hero viewer-hero">
+        <div>
+          <p class="eyebrow">JSROOT Browser</p>
+          <h1>ROOT files from bound <code>worksim</code></h1>
+          <p class="lede">Pick a generated ROOT file and open it in the local JSROOT browser that ships inside the container image.</p>
+        </div>
+        <div class="hero-actions">
+          <a class="ghost-button" href="/">Back to control room</a>
+        </div>
+      </header>
+
+      <main class="viewer-layout">
+        <aside class="panel side-panel">
+          <div class="panel-header">
+            <h2>Available ROOT files</h2>
+            <button id="refresh-root-files" class="small-button" type="button">Refresh</button>
+          </div>
+          <select id="root-file-select" size="14"></select>
+          <p id="viewer-status" class="subtle">Loading ROOT file list...</p>
+        </aside>
+
+        <section class="panel viewer-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Embedded JSROOT</h2>
+              <p class="subtle">This page uses the bundled JSROOT modules directly and opens the selected file from the bound <code>worksim</code> directory.</p>
+            </div>
+          </div>
+          <div class="jsroot-browser-layout">
+            <div id="jsroot-tree" class="jsroot-tree"></div>
+            <div id="jsroot-display" class="jsroot-display"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/viewer.js" defer></script>
+  </body>
+</html>

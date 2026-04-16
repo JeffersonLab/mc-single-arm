@@ -1,0 +1,838 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import argparse
+import json
+import mimetypes
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import uuid
+from dataclasses import asdict, dataclass
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qs, unquote, urlparse
+
+
+APP_ROOT = Path(__file__).resolve().parent
+STATIC_ROOT = APP_ROOT / "static"
+SHARE_INFILES = APP_ROOT / "share" / "infiles"
+DATA_DIR_NAMES = ("infiles", "outfiles", "runout", "worksim")
+ALLOWED_FILE_DIRS = set(DATA_DIR_NAMES)
+DEFAULT_HOST = "0.0.0.0"
+DEFAULT_PORT = 8080
+ROOTSYS_FALLBACK = Path("/cvmfs/oasis.opensciencegrid.org/jlab/scicomp/sw/el9/root/6.30.04-gcc11.4.0")
+
+
+@dataclass(frozen=True)
+class Field:
+    key: str
+    label: str
+    help_text: str
+    kind: str
+    default: Any
+    optional: bool = False
+    choices: tuple[dict[str, Any], ...] = ()
+    step: str | None = None
+    section: str = "Run Setup"
+
+
+FIELDS: list[Field] = [
+    Field("n_trials", "Monte-Carlo trials", "Number of simulated trials.", "int", 100000, section="Run Setup"),
+    Field(
+        "spectrometer",
+        "Spectrometer",
+        "1 = HMS, 2 = SHMS.",
+        "enum",
+        2,
+        choices=(
+            {"value": 1, "label": "HMS"},
+            {"value": 2, "label": "SHMS"},
+        ),
+        section="Run Setup",
+    ),
+    Field("spectrometer_momentum_mev", "Spectrometer momentum (MeV/c)", "Central spectrometer momentum.", "float", 2000.0, step="any", section="Run Setup"),
+    Field("spectrometer_angle_deg", "Spectrometer angle (deg)", "Central spectrometer angle.", "float", 20.0, step="any", section="Run Setup"),
+    Field("dp_down_percent", "M.C. dp/p down limit (%)", "Lower momentum acceptance edge.", "float", -15.0, step="any", section="Phase Space"),
+    Field("dp_up_percent", "M.C. dp/p up limit (%)", "Upper momentum acceptance edge.", "float", 30.0, step="any", section="Phase Space"),
+    Field("theta_down_mr", "M.C. theta down limit (mr)", "Lower dy/dz limit.", "float", -55.0, step="any", section="Phase Space"),
+    Field("theta_up_mr", "M.C. theta up limit (mr)", "Upper dy/dz limit.", "float", 55.0, step="any", section="Phase Space"),
+    Field("phi_down_mr", "M.C. phi down limit (mr)", "Lower dx/dz limit.", "float", -50.0, step="any", section="Phase Space"),
+    Field("phi_up_mr", "M.C. phi up limit (mr)", "Upper dx/dz limit.", "float", 50.0, step="any", section="Phase Space"),
+    Field("beam_spot_horizontal_cm", "Horiz beam spot size (cm)", "Full width of +/- 3 sigma.", "float", 0.0, step="any", section="Beam And Target"),
+    Field("beam_spot_vertical_cm", "Vert beam spot size (cm)", "Full width of +/- 3 sigma.", "float", 0.0, step="any", section="Beam And Target"),
+    Field("target_length_cm", "Target length (cm)", "Full target length.", "float", 20.0, step="any", section="Beam And Target"),
+    Field("raster_x_cm", "Raster full-width x (cm)", "Horizontal raster width.", "float", 0.0, step="any", section="Beam And Target"),
+    Field("raster_y_cm", "Raster full-width y (cm)", "Vertical raster width.", "float", 0.0, step="any", section="Beam And Target"),
+    Field("cut_dpp_percent", "dp/p reconstruction cut (%)", "Half width cut on reconstructed dp/p.", "float", 100.0, step="any", section="Reconstruction Cuts"),
+    Field("cut_theta_mr", "Theta reconstruction cut (mr)", "Half width cut on reconstructed theta.", "float", 100.0, step="any", section="Reconstruction Cuts"),
+    Field("cut_phi_mr", "Phi reconstruction cut (mr)", "Half width cut on reconstructed phi.", "float", 100.0, step="any", section="Reconstruction Cuts"),
+    Field("cut_ztgt_cm", "ZTGT reconstruction cut (cm)", "Half width cut on reconstructed z target.", "float", 100.0, step="any", section="Reconstruction Cuts"),
+    Field("rad_len_cm", "Radiation length of target material (cm)", "Radiation length in cm.", "float", 866.0, step="any", section="Beam And Target"),
+    Field("beam_x_offset_cm", "Beam x offset (cm)", "+x is beam left.", "float", 0.0, step="any", section="Offsets"),
+    Field("beam_y_offset_cm", "Beam y offset (cm)", "+y is up.", "float", 0.0, step="any", section="Offsets"),
+    Field("target_z_offset_cm", "Target z offset (cm)", "+z is downstream.", "float", 0.0, step="any", section="Offsets"),
+    Field("spectrometer_x_offset_cm", "Spectrometer x offset (cm)", "+x is down.", "float", 0.0, step="any", section="Offsets"),
+    Field("spectrometer_y_offset_cm", "Spectrometer y offset (cm)", "Spectrometer y offset.", "float", 0.0, step="any", section="Offsets"),
+    Field("spectrometer_z_offset_cm", "Spectrometer z offset (cm)", "Spectrometer z offset.", "float", 0.0, step="any", section="Offsets"),
+    Field("spectrometer_xp_offset_mr", "Spectrometer xp offset (mr)", "Spectrometer angular offset in x'.", "float", 0.0, step="any", section="Offsets"),
+    Field("spectrometer_yp_offset_mr", "Spectrometer yp offset (mr)", "Spectrometer angular offset in y'.", "float", 0.0, step="any", section="Offsets"),
+    Field(
+        "particle_id",
+        "Particle identification",
+        "0=e, 1=p, 2=d, 3=pi, 4=ka.",
+        "enum",
+        0,
+        choices=(
+            {"value": 0, "label": "Electron"},
+            {"value": 1, "label": "Proton"},
+            {"value": 2, "label": "Deuteron"},
+            {"value": 3, "label": "Pion"},
+            {"value": 4, "label": "Kaon"},
+        ),
+        section="Physics Flags",
+    ),
+    Field("multiple_scattering_flag", "Multiple scattering", "Enable multiple scattering.", "flag", 1, section="Physics Flags"),
+    Field("wire_chamber_smearing_flag", "Wire chamber smearing", "Enable wire chamber smearing.", "flag", 1, section="Physics Flags"),
+    Field("store_all_events_flag", "Store all events", "Store failed events with stop_id > 0.", "flag", 1, section="Physics Flags"),
+    Field("beam_energy_mev", "Beam energy (MeV)", "If > 0, use elastic event generation.", "float", 0.0, optional=True, step="any", section="Optional"),
+    Field("use_sieve_flag", "Use sieve", "0 = off, 1 = on.", "flag", 0, optional=True, section="Optional"),
+    Field("target_atomic_mass", "Target atomic number (Z+N)", "Used with elastic event generation.", "float", 12.0, optional=True, step="any", section="Optional"),
+]
+
+
+FIELD_INDEX = {field.key: field for field in FIELDS}
+SECTION_ORDER = [
+    "Run Setup",
+    "Phase Space",
+    "Beam And Target",
+    "Reconstruction Cuts",
+    "Offsets",
+    "Physics Flags",
+    "Optional",
+]
+REQUIRED_FIELD_COUNT = len([field for field in FIELDS if not field.optional])
+
+
+@dataclass
+class RunJob:
+    id: str
+    basename: str
+    convert_root: bool
+    keep_bin: bool
+    status: str
+    started_at: float
+    log_path: str
+    output_file: str
+    root_file: str
+    bin_file: str
+    completed_at: float | None = None
+    return_code: int | None = None
+    error: str | None = None
+
+
+def default_data_root(app_root: Path) -> Path:
+    configured = os.environ.get("MC_SINGLE_ARM_DATA_ROOT")
+    return Path(configured).resolve() if configured else app_root
+
+
+def ensure_runtime_layout(app_root: Path, data_root: Path) -> dict[str, Path]:
+    paths: dict[str, Path] = {}
+    shared_seed_dir = SHARE_INFILES if SHARE_INFILES.exists() else app_root / "infiles"
+    same_root = app_root.resolve() == data_root.resolve()
+
+    for name in DATA_DIR_NAMES:
+        target = app_root / name if same_root else data_root / name
+        target.mkdir(parents=True, exist_ok=True)
+        paths[name] = target
+
+        if same_root:
+            continue
+
+        link = app_root / name
+        if link.is_symlink():
+            expected = str(target)
+            if os.readlink(link) != expected:
+                link.unlink()
+                link.symlink_to(target)
+        elif not link.exists():
+            link.symlink_to(target)
+
+    infiles_dir = paths["infiles"]
+    if shared_seed_dir.exists() and not any(infiles_dir.iterdir()):
+        for source in sorted(shared_seed_dir.glob("*.inp")):
+            destination = infiles_dir / source.name
+            if not destination.exists():
+                shutil.copy2(source, destination)
+
+    return paths
+
+
+def normalize_filename(name: str, suffix: str) -> str:
+    cleaned = Path(name.strip()).name
+    if not cleaned:
+        raise ValueError("Filename is required.")
+    stem = Path(cleaned).stem if cleaned.endswith(suffix) else cleaned
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", stem).strip("._-")
+    if not safe:
+        raise ValueError("Filename contains no usable characters.")
+    return f"{safe}{suffix}"
+
+
+def normalize_basename(name: str) -> str:
+    return Path(normalize_filename(name, ".inp")).stem
+
+
+def coerce_value(field: Field, value: Any) -> Any:
+    if value in (None, ""):
+        return field.default
+    if field.kind in {"int", "enum", "flag"}:
+        return int(float(value))
+    return float(value)
+
+
+def format_value(field: Field, value: Any) -> str:
+    coerced = coerce_value(field, value)
+    if field.kind in {"int", "enum", "flag"}:
+        return str(int(coerced))
+    return format(float(coerced), ".15g")
+
+
+def field_comments() -> dict[str, str]:
+    return {
+        "n_trials": "Monte-Carlo trials",
+        "spectrometer": "Spectrometer (1=HMS, 2=SHMS, 3=..)",
+        "spectrometer_momentum_mev": "Spectrometer momentum (in MeV/c)",
+        "spectrometer_angle_deg": "Spectrometer angle (in degrees)",
+        "dp_down_percent": "M.C. DP/P down limit",
+        "dp_up_percent": "M.C. DP/P up limit",
+        "theta_down_mr": "M.C. Theta (dy/dz) down limit (mr)",
+        "theta_up_mr": "M.C. Theta up limit (mr)",
+        "phi_down_mr": "M.C. Phi (dx/dz) down limit (mr)",
+        "phi_up_mr": "M.C. Phi up limit (mr)",
+        "beam_spot_horizontal_cm": "Horiz beam spot size in cm (Full width of +/- 3 sigma)",
+        "beam_spot_vertical_cm": "Vert beam spot size in cm (Full width of +/- 3 sigma)",
+        "target_length_cm": "Length of target (Full width, cm)",
+        "raster_x_cm": "Raster full-width x (cm)",
+        "raster_y_cm": "Raster full-width y (cm)",
+        "cut_dpp_percent": "DP/P reconstruction cut (half width in %)",
+        "cut_theta_mr": "Theta reconstruction cut (half width in mr)",
+        "cut_phi_mr": "Phi reconstruction cut (half width in mr)",
+        "cut_ztgt_cm": "ZTGT reconstruction cut (Half width in cm)",
+        "rad_len_cm": "One radiation length of target material (in cm)",
+        "beam_x_offset_cm": "Beam x offset (cm)  +x = beam left",
+        "beam_y_offset_cm": "Beam y offset (cm)  +y = up",
+        "target_z_offset_cm": "Target z offset (cm) +z = downstream",
+        "spectrometer_x_offset_cm": "Spectrometer x offset (cm) +x = down",
+        "spectrometer_y_offset_cm": "Spectrometer y offset (cm)",
+        "spectrometer_z_offset_cm": "Spectrometer z offset (cm)",
+        "spectrometer_xp_offset_mr": "Spectrometer xp offset (mr)",
+        "spectrometer_yp_offset_mr": "Spectrometer yp offset (mr)",
+        "particle_id": "Particle identification : e=0, p=1, d=2, pi=3, ka=4",
+        "multiple_scattering_flag": "Flag for multiple scattering",
+        "wire_chamber_smearing_flag": "Flag for wire chamber smearing",
+        "store_all_events_flag": "Flag for storing all events (including failed events with stop_id > 0)",
+        "beam_energy_mev": "Beam energy, if >0 then calculate for C elastic",
+        "use_sieve_flag": "Flag to use sieve",
+        "target_atomic_mass": "Target atomic number (Z+N) for elastic event generation",
+    }
+
+
+FIELD_COMMENTS = field_comments()
+
+
+def parse_inp_content(content: str) -> tuple[dict[str, Any], list[str]]:
+    tokens: list[str] = []
+    for raw_line in content.splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("!"):
+            continue
+        match = re.match(r"^(\S+)", stripped)
+        if match:
+            tokens.append(match.group(1))
+
+    if len(tokens) < REQUIRED_FIELD_COUNT:
+        raise ValueError(f"Expected at least {REQUIRED_FIELD_COUNT} data lines, found {len(tokens)}.")
+
+    values: dict[str, Any] = {}
+    missing_optional: list[str] = []
+
+    for index, field in enumerate(FIELDS):
+        if index < len(tokens):
+            values[field.key] = coerce_value(field, tokens[index])
+        else:
+            values[field.key] = field.default
+            if field.optional:
+                missing_optional.append(field.key)
+
+    return values, missing_optional
+
+
+def render_inp(values: dict[str, Any]) -> str:
+    lines = [
+        "!------------------------------------------------------------------------------",
+        "! Input file for MC_SINGLE_ARM",
+        "! Generated by mc-single-arm web configuration UI",
+        "!------------------------------------------------------------------------------",
+    ]
+    for field in FIELDS:
+        token = format_value(field, values.get(field.key, field.default))
+        lines.append(f"{token:>12}\t{FIELD_COMMENTS[field.key]}")
+    return "\n".join(lines) + "\n"
+
+
+def schema_payload() -> list[dict[str, Any]]:
+    return [
+        {
+            "key": field.key,
+            "label": field.label,
+            "help_text": field.help_text,
+            "kind": field.kind,
+            "default": field.default,
+            "optional": field.optional,
+            "choices": list(field.choices),
+            "step": field.step,
+            "section": field.section,
+        }
+        for field in FIELDS
+    ]
+
+
+def resolve_runtime_path(base_dir: Path, name: str) -> Path:
+    safe_name = Path(name).name
+    candidate = (base_dir / safe_name).resolve()
+    base_resolved = base_dir.resolve()
+    if candidate.parent != base_resolved:
+        raise ValueError("Invalid file path.")
+    return candidate
+
+
+def root_prefix_env() -> dict[str, str]:
+    env = os.environ.copy()
+    if "ROOTSYS" not in env and ROOTSYS_FALLBACK.exists():
+        env["ROOTSYS"] = str(ROOTSYS_FALLBACK)
+        env["PATH"] = f"{ROOTSYS_FALLBACK / 'bin'}:{env.get('PATH', '')}"
+    return env
+
+
+def append_log_header(log_handle: Any, title: str) -> None:
+    log_handle.write(f"\n===== {title} =====\n")
+    log_handle.flush()
+
+
+def stream_process(command: list[str], cwd: Path, stdin_text: str, log_handle: Any) -> int:
+    process = subprocess.Popen(
+        command,
+        cwd=str(cwd),
+        env=root_prefix_env(),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    assert process.stdin is not None
+    assert process.stdout is not None
+    process.stdin.write(stdin_text)
+    process.stdin.close()
+    for line in process.stdout:
+        log_handle.write(line)
+        log_handle.flush()
+    return process.wait()
+
+
+def ensure_binary(path: Path, build_command: list[str], cwd: Path, log_handle: Any) -> None:
+    if path.exists():
+        return
+    append_log_header(log_handle, f"Building {path.name}")
+    result = subprocess.run(
+        build_command,
+        cwd=str(cwd),
+        env=root_prefix_env(),
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    log_handle.flush()
+    if result.returncode != 0 or not path.exists():
+        raise RuntimeError(f"Failed to build {path.name}.")
+
+
+class RunManager:
+    def __init__(self, app_root: Path, runtime_paths: dict[str, Path]):
+        self.app_root = app_root
+        self.runtime_paths = runtime_paths
+        self._lock = threading.Lock()
+        self._jobs: dict[str, RunJob] = {}
+
+    def list_jobs(self) -> list[RunJob]:
+        with self._lock:
+            return [self._jobs[key] for key in sorted(self._jobs.keys())]
+
+    def get_job(self, job_id: str) -> RunJob | None:
+        with self._lock:
+            return self._jobs.get(job_id)
+
+    def create_job(self, basename: str, convert_root: bool, keep_bin: bool) -> RunJob:
+        basename = normalize_basename(basename)
+        for job in self.list_jobs():
+            if job.basename == basename and job.status == "running":
+                raise ValueError(f"A run for '{basename}' is already active.")
+
+        job = RunJob(
+            id=uuid.uuid4().hex[:12],
+            basename=basename,
+            convert_root=convert_root,
+            keep_bin=keep_bin,
+            status="running",
+            started_at=time.time(),
+            log_path=str(self.runtime_paths["runout"] / f"{basename}.out"),
+            output_file=str(self.runtime_paths["outfiles"] / f"{basename}.out"),
+            root_file=str(self.runtime_paths["worksim"] / f"{basename}.root"),
+            bin_file=str(self.runtime_paths["worksim"] / f"{basename}.bin"),
+        )
+        with self._lock:
+            self._jobs[job.id] = job
+        return job
+
+    def start_async(self, basename: str, convert_root: bool, keep_bin: bool) -> RunJob:
+        job = self.create_job(basename, convert_root, keep_bin)
+        worker = threading.Thread(target=self._run_job, args=(job.id,), daemon=True)
+        worker.start()
+        return job
+
+    def run_sync(self, basename: str, convert_root: bool, keep_bin: bool) -> RunJob:
+        job = self.create_job(basename, convert_root, keep_bin)
+        self._run_job(job.id)
+        return self.get_job(job.id) or job
+
+    def _set_job_state(self, job_id: str, **updates: Any) -> None:
+        with self._lock:
+            job = self._jobs[job_id]
+            for key, value in updates.items():
+                setattr(job, key, value)
+
+    def _run_job(self, job_id: str) -> None:
+        job = self.get_job(job_id)
+        if job is None:
+            return
+
+        try:
+            self._execute(job)
+        except Exception as exc:  # pragma: no cover - surfaced to API/log
+            self._set_job_state(
+                job_id,
+                status="failed",
+                error=str(exc),
+                return_code=1,
+                completed_at=time.time(),
+            )
+
+    def _execute(self, job: RunJob) -> None:
+        src_binary = self.app_root / "src" / "mc_single_arm"
+        root_binary = self.app_root / "util" / "root_tree" / "make_root_tree"
+        log_path = Path(job.log_path)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with log_path.open("w", encoding="utf-8") as log_handle:
+            append_log_header(log_handle, "mc-single-arm run started")
+            ensure_binary(src_binary, ["make", "clean", "all"], self.app_root / "src", log_handle)
+            if job.convert_root:
+                ensure_binary(root_binary, ["make", "clean", "all"], self.app_root / "util" / "root_tree", log_handle)
+
+            input_payload = f"{job.basename}\n"
+            append_log_header(log_handle, "Running mc_single_arm")
+            status = stream_process([str(src_binary)], self.app_root / "src", input_payload, log_handle)
+            if status != 0:
+                raise RuntimeError("mc_single_arm exited with a non-zero status.")
+
+            if job.convert_root:
+                append_log_header(log_handle, "Converting .bin to .root")
+                status = stream_process([str(root_binary)], self.app_root / "util" / "root_tree", input_payload, log_handle)
+                if status != 0:
+                    raise RuntimeError("make_root_tree exited with a non-zero status.")
+                if not job.keep_bin:
+                    bin_path = Path(job.bin_file)
+                    if bin_path.exists():
+                        bin_path.unlink()
+
+            append_log_header(log_handle, "Run completed")
+
+        self._set_job_state(
+            job.id,
+            status="completed",
+            return_code=0,
+            completed_at=time.time(),
+            error=None,
+        )
+
+
+class McSingleArmHandler(BaseHTTPRequestHandler):
+    server_version = "mc-single-arm/1.0"
+
+    @property
+    def app(self) -> "McSingleArmServer":
+        return self.server  # type: ignore[return-value]
+
+    def log_message(self, fmt: str, *args: Any) -> None:
+        sys.stderr.write("%s - - [%s] %s\n" % (self.address_string(), self.log_date_time_string(), fmt % args))
+
+    def do_GET(self) -> None:
+        self._handle_request(send_body=True)
+
+    def do_HEAD(self) -> None:
+        self._handle_request(send_body=False)
+
+    def _handle_request(self, send_body: bool) -> None:
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+
+        if path == "/":
+            self._serve_static_file(STATIC_ROOT / "index.html", send_body=send_body)
+            return
+        if path == "/viewer":
+            self._serve_static_file(STATIC_ROOT / "viewer.html", send_body=send_body)
+            return
+        if path == "/run":
+            self._serve_static_file(STATIC_ROOT / "run.html", send_body=send_body)
+            return
+        if path.startswith("/static/"):
+            relative = path[len("/static/") :]
+            self._serve_static_file(STATIC_ROOT / relative, send_body=send_body)
+            return
+        if path.startswith("/files/"):
+            self._serve_bound_file(path, send_body=send_body)
+            return
+        if path == "/api/healthz":
+            self._send_json(
+                {
+                    "status": "ok",
+                    "jsroot_available": (STATIC_ROOT / "jsroot" / "modules" / "gui.mjs").exists()
+                    or (STATIC_ROOT / "jsroot" / "index.htm").exists(),
+                },
+                send_body=send_body,
+            )
+            return
+        if path == "/api/infiles":
+            self._handle_list_infiles(send_body=send_body)
+            return
+        if path.startswith("/api/infiles/") and path.endswith("/download"):
+            filename = path[len("/api/infiles/") : -len("/download")]
+            self._handle_download_infile(filename, send_body=send_body)
+            return
+        if path.startswith("/api/infiles/"):
+            filename = path[len("/api/infiles/") :]
+            self._handle_get_infile(filename, send_body=send_body)
+            return
+        if path.startswith("/api/runs/") and path.endswith("/log"):
+            job_id = path[len("/api/runs/") : -len("/log")]
+            self._handle_run_log(job_id, send_body=send_body)
+            return
+        if path.startswith("/api/runs/"):
+            job_id = path[len("/api/runs/") :]
+            self._handle_get_run(job_id, send_body=send_body)
+            return
+        if path == "/api/files":
+            query = parse_qs(parsed.query)
+            self._handle_list_files(query.get("dir", [""])[0], send_body=send_body)
+            return
+
+        self.send_error(HTTPStatus.NOT_FOUND, "Route not found.")
+
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+        payload = self._read_json_body()
+
+        if path == "/api/infiles/import":
+            self._handle_import_infile(payload)
+            return
+        if path == "/api/runs":
+            self._handle_create_run(payload)
+            return
+
+        self.send_error(HTTPStatus.NOT_FOUND, "Route not found.")
+
+    def do_PUT(self) -> None:
+        parsed = urlparse(self.path)
+        path = unquote(parsed.path)
+        payload = self._read_json_body()
+
+        if path.startswith("/api/infiles/"):
+            filename = path[len("/api/infiles/") :]
+            self._handle_save_infile(filename, payload)
+            return
+
+        self.send_error(HTTPStatus.NOT_FOUND, "Route not found.")
+
+    def _read_json_body(self) -> dict[str, Any]:
+        content_length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(content_length) if content_length else b"{}"
+        try:
+            return json.loads(raw_body.decode("utf-8"))
+        except json.JSONDecodeError as exc:
+            self.send_error(HTTPStatus.BAD_REQUEST, f"Invalid JSON body: {exc}")
+            raise
+
+    def _handle_list_infiles(self, send_body: bool = True) -> None:
+        infiles_dir = self.app.runtime_paths["infiles"]
+        files = sorted(path.name for path in infiles_dir.glob("*.inp"))
+        self._send_json({"files": files, "schema": schema_payload()}, send_body=send_body)
+
+    def _handle_get_infile(self, filename: str, send_body: bool = True) -> None:
+        normalized = normalize_filename(filename, ".inp")
+        file_path = resolve_runtime_path(self.app.runtime_paths["infiles"], normalized)
+        if not file_path.exists():
+            self.send_error(HTTPStatus.NOT_FOUND, "Input file not found.")
+            return
+        content = file_path.read_text(encoding="utf-8")
+        values, missing_optional = parse_inp_content(content)
+        self._send_json(
+            {
+                "name": normalized,
+                "basename": file_path.stem,
+                "values": values,
+                "missing_optional": missing_optional,
+                "content": content,
+            },
+            send_body=send_body,
+        )
+
+    def _handle_download_infile(self, filename: str, send_body: bool = True) -> None:
+        normalized = normalize_filename(filename, ".inp")
+        file_path = resolve_runtime_path(self.app.runtime_paths["infiles"], normalized)
+        if not file_path.exists():
+            self.send_error(HTTPStatus.NOT_FOUND, "Input file not found.")
+            return
+        self._serve_path(file_path, content_type="text/plain; charset=utf-8", download_name=normalized, send_body=send_body)
+
+    def _handle_import_infile(self, payload: dict[str, Any]) -> None:
+        content = payload.get("content", "")
+        filename = normalize_filename(payload.get("filename", "imported.inp"), ".inp")
+        values, missing_optional = parse_inp_content(content)
+        file_path = resolve_runtime_path(self.app.runtime_paths["infiles"], filename)
+        file_path.write_text(render_inp(values), encoding="utf-8")
+        self._send_json(
+            {
+                "name": filename,
+                "basename": file_path.stem,
+                "values": values,
+                "missing_optional": missing_optional,
+                "saved": True,
+            },
+            status=HTTPStatus.CREATED,
+        )
+
+    def _handle_save_infile(self, filename: str, payload: dict[str, Any]) -> None:
+        normalized = normalize_filename(filename, ".inp")
+        values = payload.get("values", {})
+        rendered_values = {field.key: coerce_value(field, values.get(field.key, field.default)) for field in FIELDS}
+        file_path = resolve_runtime_path(self.app.runtime_paths["infiles"], normalized)
+        file_path.write_text(render_inp(rendered_values), encoding="utf-8")
+        self._send_json({"name": normalized, "basename": file_path.stem, "saved": True})
+
+    def _handle_create_run(self, payload: dict[str, Any]) -> None:
+        name = payload.get("name") or payload.get("basename")
+        if not name:
+            self.send_error(HTTPStatus.BAD_REQUEST, "Run name is required.")
+            return
+        convert_root = bool(payload.get("convert_root", True))
+        keep_bin = bool(payload.get("keep_bin", False))
+        try:
+            job = self.app.run_manager.start_async(name, convert_root, keep_bin)
+        except ValueError as exc:
+            self.send_error(HTTPStatus.CONFLICT, str(exc))
+            return
+        self._send_json({"job": asdict(job)}, status=HTTPStatus.ACCEPTED)
+
+    def _handle_get_run(self, job_id: str, send_body: bool = True) -> None:
+        job = self.app.run_manager.get_job(job_id)
+        if job is None:
+            self.send_error(HTTPStatus.NOT_FOUND, "Run not found.")
+            return
+        self._send_json({"job": asdict(job)}, send_body=send_body)
+
+    def _handle_run_log(self, job_id: str, send_body: bool = True) -> None:
+        job = self.app.run_manager.get_job(job_id)
+        if job is None:
+            self.send_error(HTTPStatus.NOT_FOUND, "Run not found.")
+            return
+        log_path = Path(job.log_path)
+        if not log_path.exists():
+            self.send_error(HTTPStatus.NOT_FOUND, "Log not found.")
+            return
+        self._serve_path(log_path, content_type="text/plain; charset=utf-8", send_body=send_body)
+
+    def _handle_list_files(self, directory_name: str, send_body: bool = True) -> None:
+        if directory_name not in ALLOWED_FILE_DIRS:
+            self.send_error(HTTPStatus.BAD_REQUEST, "dir must be one of infiles, outfiles, runout, worksim.")
+            return
+        base_dir = self.app.runtime_paths[directory_name]
+        base_dir.mkdir(parents=True, exist_ok=True)
+        files = []
+        for item in sorted(base_dir.iterdir()):
+            if not item.is_file():
+                continue
+            files.append(
+                {
+                    "name": item.name,
+                    "size": item.stat().st_size,
+                    "mtime": item.stat().st_mtime,
+                    "url": f"/files/{directory_name}/{item.name}",
+                }
+            )
+        self._send_json({"dir": directory_name, "files": files}, send_body=send_body)
+
+    def _serve_bound_file(self, url_path: str, send_body: bool = True) -> None:
+        parts = [part for part in url_path.split("/") if part]
+        if len(parts) != 3:
+            self.send_error(HTTPStatus.NOT_FOUND, "File route not found.")
+            return
+        _, directory_name, filename = parts
+        if directory_name not in ALLOWED_FILE_DIRS:
+            self.send_error(HTTPStatus.BAD_REQUEST, "Unsupported directory.")
+            return
+        base_dir = self.app.runtime_paths[directory_name]
+        try:
+            file_path = resolve_runtime_path(base_dir, filename)
+        except ValueError:
+            self.send_error(HTTPStatus.BAD_REQUEST, "Invalid file path.")
+            return
+        if not file_path.exists():
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found.")
+            return
+        self._serve_path(file_path, send_body=send_body)
+
+    def _serve_static_file(self, file_path: Path, send_body: bool = True) -> None:
+        if not file_path.exists() or not file_path.is_file():
+            self.send_error(HTTPStatus.NOT_FOUND, "Static file not found.")
+            return
+        self._serve_path(file_path, send_body=send_body)
+
+    def _serve_path(
+        self,
+        file_path: Path,
+        content_type: str | None = None,
+        download_name: str | None = None,
+        send_body: bool = True,
+    ) -> None:
+        file_size = file_path.stat().st_size
+        mime_type = content_type or mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
+        range_header = self.headers.get("Range")
+        start = 0
+        end = file_size - 1
+        status = HTTPStatus.OK
+
+        if range_header:
+            match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header.strip())
+            if not match:
+                self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE, "Invalid Range header.")
+                return
+            if match.group(1):
+                start = int(match.group(1))
+            if match.group(2):
+                end = int(match.group(2))
+            if start > end or end >= file_size:
+                self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE, "Requested range is outside the file.")
+                return
+            status = HTTPStatus.PARTIAL_CONTENT
+
+        self.send_response(status)
+        self.send_header("Content-Type", mime_type)
+        self.send_header("Content-Length", str(end - start + 1))
+        self.send_header("Accept-Ranges", "bytes")
+        if download_name:
+            self.send_header("Content-Disposition", f'attachment; filename="{download_name}"')
+        if status == HTTPStatus.PARTIAL_CONTENT:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+        self.end_headers()
+
+        if not send_body:
+            return
+
+        with file_path.open("rb") as handle:
+            handle.seek(start)
+            remaining = end - start + 1
+            while remaining > 0:
+                chunk = handle.read(min(64 * 1024, remaining))
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                remaining -= len(chunk)
+
+    def _send_json(self, payload: dict[str, Any], status: HTTPStatus = HTTPStatus.OK, send_body: bool = True) -> None:
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if send_body:
+            self.wfile.write(body)
+
+
+class McSingleArmServer(ThreadingHTTPServer):
+    def __init__(self, host: str, port: int, app_root: Path, runtime_paths: dict[str, Path], run_manager: RunManager):
+        super().__init__((host, port), McSingleArmHandler)
+        self.app_root = app_root
+        self.runtime_paths = runtime_paths
+        self.run_manager = run_manager
+
+
+def command_run(args: argparse.Namespace) -> int:
+    app_root = APP_ROOT
+    runtime_paths = ensure_runtime_layout(app_root, default_data_root(app_root))
+    manager = RunManager(app_root, runtime_paths)
+    job = manager.run_sync(args.basename, args.convert_root, args.keep_bin)
+    print(Path(job.log_path).read_text(encoding="utf-8"))
+    return job.return_code or 0
+
+
+def command_serve(args: argparse.Namespace) -> int:
+    app_root = APP_ROOT
+    runtime_paths = ensure_runtime_layout(app_root, default_data_root(app_root))
+    manager = RunManager(app_root, runtime_paths)
+    server = McSingleArmServer(args.host, args.port, app_root, runtime_paths, manager)
+    print(f"Serving mc-single-arm on http://{args.host}:{args.port}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="mc-single-arm runtime and web UI")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    serve_parser = subparsers.add_parser("serve", help="Launch the browser UI and API")
+    serve_parser.add_argument("--host", default=DEFAULT_HOST)
+    serve_parser.add_argument("--port", type=int, default=DEFAULT_PORT)
+    serve_parser.set_defaults(func=command_serve)
+
+    run_parser = subparsers.add_parser("run", help="Run a configuration by basename")
+    run_parser.add_argument("basename", help="Input basename, with or without .inp")
+    run_parser.add_argument("--convert-root", action="store_true", help="Convert the produced .bin file into a ROOT file.")
+    run_parser.add_argument("--keep-bin", action="store_true", help="Keep the intermediate .bin file after ROOT conversion.")
+    run_parser.set_defaults(func=command_run)
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

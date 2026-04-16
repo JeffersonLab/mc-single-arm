@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>mc-single-arm Run</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Run Status</p>
+          <h1 id="run-title">mc-single-arm run</h1>
+          <p id="run-status-text" class="lede">Loading run information...</p>
+        </div>
+        <div class="hero-actions">
+          <a class="ghost-button" href="/">Back to inputs</a>
+        </div>
+      </header>
+
+      <main class="run-layout">
+        <section class="panel run-log-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Run log</h2>
+              <p class="subtle">This is the live content of <code>runout/&lt;basename&gt;.out</code>.</p>
+            </div>
+            <button id="refresh-run" class="small-button" type="button">Refresh</button>
+          </div>
+          <textarea id="run-log" readonly spellcheck="false" class="run-log-text"></textarea>
+        </section>
+
+        <aside class="panel run-side-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Artifacts</h2>
+              <p class="subtle">Downloads become active as files appear.</p>
+            </div>
+          </div>
+
+          <div class="artifact-grid">
+            <a id="download-inp" class="ghost-button" href="#">Download .inp</a>
+            <a id="download-root" class="ghost-button disabled-link" href="#">Download .root</a>
+            <a id="download-out" class="ghost-button disabled-link" href="#">Download out</a>
+            <a id="download-log" class="ghost-button disabled-link" href="#">Download log</a>
+            <a id="open-viewer" class="ghost-button disabled-link" href="#">Open JSROOT</a>
+          </div>
+
+          <div class="status-block">
+            <h3>Current file state</h3>
+            <ul id="artifact-status" class="artifact-status"></ul>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script src="/static/run.js" defer></script>
+  </body>
+</html>
