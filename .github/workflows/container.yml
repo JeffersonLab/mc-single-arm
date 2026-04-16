@@ -40,6 +40,8 @@ jobs:
             -v "$DATA_ROOT/worksim:/data/worksim" \
             mc-single-arm:test
 
+          sleep 2
+          docker ps --filter name=mc-single-arm-smoke --format '{{.Names}}'
           python3 tools/smoke_api_check.py http://127.0.0.1:18080
 
       - name: Show container logs on failure

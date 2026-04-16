@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import http.client
 import sys
 import time
 import urllib.error
@@ -33,7 +34,7 @@ def wait_for_health(base_url: str) -> None:
             payload = request_json("GET", f"{base_url}/api/healthz")
             if payload.get("status") == "ok":
                 return
-        except urllib.error.URLError:
+        except (urllib.error.URLError, ConnectionResetError, ConnectionRefusedError, http.client.RemoteDisconnected):
             time.sleep(1)
             continue
         time.sleep(1)
