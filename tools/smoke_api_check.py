@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 
 
-def request(method: str, url: str, payload: dict | None = None) -> tuple[int, str]:
+def request(method: str, url: str, payload: dict | None = None) -> tuple[int, bytes]:
     body = None
     headers = {}
     if payload is not None:
@@ -18,12 +18,12 @@ def request(method: str, url: str, payload: dict | None = None) -> tuple[int, st
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=30) as response:
-        return response.status, response.read().decode("utf-8")
+        return response.status, response.read()
 
 
 def request_json(method: str, url: str, payload: dict | None = None) -> dict:
-    _, text = request(method, url, payload)
-    return json.loads(text)
+    _, body = request(method, url, payload)
+    return json.loads(body.decode("utf-8"))
 
 
 def wait_for_health(base_url: str) -> None:
@@ -83,7 +83,8 @@ def main(argv: list[str]) -> int:
         if status == "completed":
             break
         if status == "failed":
-            _, log_text = request("GET", f"{base_url}/api/runs/{job_id}/log")
+            _, log_body = request("GET", f"{base_url}/api/runs/{job_id}/log")
+            log_text = log_body.decode("utf-8")
             raise RuntimeError(f"Container run failed:\n{log_text}")
         time.sleep(2)
     else:
